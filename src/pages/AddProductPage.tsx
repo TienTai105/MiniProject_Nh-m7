@@ -98,7 +98,7 @@ const AddProductPage: React.FC = () => {
 
         <div>
           <label className="block mb-1">Image (link, cách nhau dấu ,)</label>
-          <input {...register("image")} placeholder="/src/assets/p_img1.png, /src/assets/p_img2.png" className="w-full border p-2 rounded" />
+          <input {...register("image")} placeholder="/p_img1.png, /p_img2.png" className="w-full border p-2 rounded" />
           {errors.image && <div className="text-sm text-red-600">{errors.image.message}</div>}
         </div>
 

@@ -9,6 +9,7 @@ import {
   LogOut,
   UserCircle2,
 } from "lucide-react";
+import { Box } from "lucide-react";
 import { useThemeStore } from "../store/themeStore";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
@@ -70,6 +71,11 @@ const Navbar = () => {
                 {totalItems}
               </span>
             )}
+          </Link>
+
+          {/* Manage products (visible to all users) */}
+          <Link to="/manage-products" title="Quản lý sản phẩm" className="text-gray-700 hover:text-blue-600">
+            <Box className="w-5 h-5" />
           </Link>
 
           {/* Toggle theme */}

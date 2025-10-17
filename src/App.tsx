@@ -10,7 +10,9 @@ import About from "./pages/AboutPage";
 import Contact from "./pages/ContactPage";
 import ProductDetail from "./pages/ProductDetail";
 import AddProductPage from "./pages/AddProductPage";
+import ManageProduct from "./pages/ManageProduct";
 import { ToastContainer } from 'react-toastify';
+import Login from "./pages/LoginPage";
 import CartPage from "./pages/CartPage";
 
 const App: React.FC = () => {
@@ -41,6 +43,8 @@ const App: React.FC = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/manage-products" element={<ManageProduct />} />
           </Routes>
         </main>
         <Footer />
