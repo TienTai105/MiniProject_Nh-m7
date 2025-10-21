@@ -19,9 +19,6 @@ const schema = yup.object({
     )
     .positive("Phải lớn hơn 0")
     .required("Giá là bắt buộc"),
-  image: yup
-    .string()
-    .required("Vui lòng dán URL ảnh (hoặc nhiều URL, ngăn cách bởi dấu ,)"),
   category: yup.string().required("Danh mục là bắt buộc"),
 });
 
@@ -29,7 +26,7 @@ type FormValues = {
   id?: string;
   name: string;
   price: number | string;
-  image: string;
+  image?: string;
   description?: string;
   category: string;
   subCategory?: string;
@@ -45,7 +42,6 @@ const AddProductPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  const [previewFileNames, setPreviewFileNames] = useState<string[]>([]);
 
   const {
     register,
@@ -67,24 +63,14 @@ const AddProductPage: React.FC = () => {
     },
   });
 
-  const { data: existingProduct, isLoading: isFetchingProduct, error: productError } =
-    useQuery<Product | null>({
-      queryKey: ["product", id ?? "no-id"],
-      queryFn: async () => {
-        if (!id) return null;
-        return await getProductById(id);
-      },
-      enabled: !!id,
-    });
-
-  useEffect(() => {
-    if (productError) {
-      console.error("getProductById error", productError);
-      toast.error(
-        "Không tải được sản phẩm: " + (productError?.message || productError)
-      );
-    }
-  }, [productError]);
+  const { data: existingProduct } = useQuery<Product | null>({
+    queryKey: ["product", id ?? "no-id"],
+    queryFn: async () => {
+      if (!id) return null;
+      return await getProductById(id);
+    },
+    enabled: !!id,
+  });
 
   useEffect(() => {
     if (!existingProduct) return;
@@ -93,13 +79,13 @@ const AddProductPage: React.FC = () => {
       name: existingProduct.name ?? "",
       price: existingProduct.price ?? "",
       image: Array.isArray(existingProduct.image)
-        ? (existingProduct.image as string[]).join(", ")
-        : (existingProduct.image as unknown as string) ?? "",
+        ? existingProduct.image.join(", ")
+        : (existingProduct.image as string) ?? "",
       description: existingProduct.description ?? "",
       category: existingProduct.category ?? "",
       subCategory: existingProduct.subCategory ?? "",
       sizes: existingProduct.sizes
-        ? (existingProduct.sizes as string[]).join(", ")
+        ? existingProduct.sizes.join(", ")
         : "",
       date: existingProduct.date ?? Date.now(),
       bestseller: !!existingProduct.bestseller,
@@ -109,79 +95,51 @@ const AddProductPage: React.FC = () => {
     if (existingProduct.image) {
       const imgs = Array.isArray(existingProduct.image)
         ? existingProduct.image
-        : [(existingProduct.image as unknown as string)];
+        : [existingProduct.image as string];
       setPreviewImages(imgs);
     }
   }, [existingProduct]);
 
-  // ✅ Cho phép chọn nhiều file và hiển thị preview
-  const handlePreviewOnly = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ Khi chọn file → hiển thị ảnh preview ngay
+  const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    if (!files.length) return;
 
-    setPreviewFileNames(files.map((f) => f.name));
-
-    const newPreviews: string[] = [];
+    const previews: string[] = [];
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        newPreviews.push(dataUrl);
-        if (newPreviews.length === files.length) {
-          setPreviewImages(newPreviews);
-          toast.info("Ảnh đã được preview — nhớ dán URL ảnh để lưu chính thức.");
-        }
+        previews.push(reader.result as string);
+        if (previews.length === files.length) setPreviewImages(previews);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const addMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      return await addProduct(payload);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-    },
+    mutationFn: async (payload: any) => addProduct(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (product: Product) => {
-      return await updateProduct(product);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-    },
+    mutationFn: async (product: Product) => updateProduct(product),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 
   const onSubmit = (data: FormValues) => {
-    const imageRaw = data.image?.trim() ?? "";
-    if (!imageRaw) {
-      toast.error(
-        "Vui lòng dán URL ảnh vào ô 'Ảnh' trước khi lưu (không gửi base64 trực tiếp)."
-      );
-      return;
-    }
-
-    if (imageRaw.startsWith("data:")) {
-      toast.error(
-        "Phát hiện base64 trong ô 'Ảnh'. Vui lòng upload ảnh lên dịch vụ ảnh và dán URL tại đây."
-      );
-      return;
-    }
-
     const productPayload: Omit<Product, "id"> = {
       name: data.name,
       description: data.description ?? "",
       price: Number(data.price),
-      image: imageRaw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      image: previewImages.length
+        ? previewImages
+        : data.image
+        ? data.image.split(",").map((s) => s.trim())
+        : [],
       category: data.category,
       subCategory: data.subCategory ?? "",
       sizes: data.sizes
-        ? data.sizes.split(",").map((s) => s.trim()).filter(Boolean)
+        ? data.sizes.split(",").map((s) => s.trim())
         : [],
       date: typeof data.date === "number" ? data.date : Date.now(),
       bestseller: !!data.bestseller,
@@ -189,67 +147,45 @@ const AddProductPage: React.FC = () => {
     };
 
     if (id) {
-      const productToUpdate: Product = { ...(productPayload as Product), id };
-      updateMutation.mutate(productToUpdate, {
+      updateMutation.mutate({ ...productPayload, id } as Product, {
         onSuccess: () => {
           toast.success("Cập nhật sản phẩm thành công");
           navigate("/collection");
         },
-        onError: (err: any) => {
-          toast.error("Cập nhật thất bại: " + (err?.message || "Lỗi"));
-        },
+        onError: (err: any) =>
+          toast.error("Cập nhật thất bại: " + (err?.message || "Lỗi")),
       });
     } else {
       addMutation.mutate(productPayload as any, {
-        onSuccess: (res: any) => {
+        onSuccess: () => {
           toast.success("Thêm sản phẩm thành công");
           navigate("/collection");
         },
-        onError: (err: any) => {
-          if (err?.response?.status === 413) {
-            toast.error(
-              "Thêm thất bại: payload quá lớn. Hãy dùng URL ảnh thay vì gửi ảnh base64."
-            );
-          } else {
-            toast.error("Thêm thất bại: " + (err?.message || "Lỗi"));
-          }
-        },
+        onError: (err: any) =>
+          toast.error("Thêm thất bại: " + (err?.message || "Lỗi")),
       });
     }
   };
 
-  const mutationIsLoading = (m: any) => {
-    if (!m) return false;
-    if (typeof m.isLoading === "boolean") return m.isLoading;
-    if (typeof m.status === "string") return m.status === "loading";
-    return false;
-  };
-
-  const isBusy =
-    Boolean(isSubmitting) ||
-    mutationIsLoading(addMutation) ||
-    mutationIsLoading(updateMutation) ||
-    Boolean(isFetchingProduct);
-
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">
         {id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
       </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Tên sản phẩm */}
         <div>
-          <label className="block mb-1">Tên sản phẩm</label>
+          <label className="block mb-1 font-medium">Tên sản phẩm</label>
           <input {...register("name")} className="w-full border p-2 rounded" />
           {errors.name && (
-            <p className="text-sm text-red-600">
-              {String(errors.name.message)}
-            </p>
+            <p className="text-sm text-red-600">{errors.name.message}</p>
           )}
         </div>
 
+        {/* Giá */}
         <div>
-          <label className="block mb-1">Giá</label>
+          <label className="block mb-1 font-medium">Giá</label>
           <input
             type="number"
             {...register("price")}
@@ -257,36 +193,20 @@ const AddProductPage: React.FC = () => {
             step="any"
           />
           {errors.price && (
-            <p className="text-sm text-red-600">
-              {String(errors.price.message)}
-            </p>
+            <p className="text-sm text-red-600">{errors.price.message}</p>
           )}
         </div>
 
-        {/* ✅ Phần ẢNH (đã fix hiển thị preview nhiều ảnh) */}
+        {/* Ảnh sản phẩm */}
         <div>
-          <label className="block mb-1">Ảnh</label>
-          <input
-            type="text"
-            placeholder="Dán URL ảnh (ngăn cách bởi dấu , nếu nhiều)"
-            {...register("image")}
-            className="w-full border p-2 rounded"
-          />
-          <div className="mt-2 text-sm text-gray-600">
-            Chọn file để xem preview (chỉ preview, không upload).
-          </div>
+          <label className="block mb-1 font-medium">Ảnh</label>
           <input
             type="file"
             accept="image/*"
             multiple
-            onChange={handlePreviewOnly}
-            className="w-full mt-2"
+            onChange={handleFilePreview}
+            className="w-full border p-2 rounded"
           />
-          {previewFileNames.length > 0 && (
-            <div className="text-xs text-gray-500 mt-1">
-              {previewFileNames.join(", ")}
-            </div>
-          )}
           {previewImages.length > 0 && (
             <div className="mt-3 grid grid-cols-3 gap-2">
               {previewImages.map((src, i) => (
@@ -299,40 +219,38 @@ const AddProductPage: React.FC = () => {
               ))}
             </div>
           )}
-          {errors.image && (
-            <p className="text-sm text-red-600 mt-1">
-              {String(errors.image.message)}
-            </p>
-          )}
         </div>
 
+        {/* Danh mục */}
         <div>
-          <label className="block mb-1">Danh mục</label>
+          <label className="block mb-1 font-medium">Danh mục</label>
           <input {...register("category")} className="w-full border p-2 rounded" />
           {errors.category && (
-            <p className="text-sm text-red-600">
-              {String(errors.category.message)}
-            </p>
+            <p className="text-sm text-red-600">{errors.category.message}</p>
           )}
         </div>
 
+        {/* Mô tả */}
         <div>
-          <label className="block mb-1">Mô tả</label>
+          <label className="block mb-1 font-medium">Mô tả</label>
           <textarea {...register("description")} className="w-full border p-2 rounded" />
         </div>
 
-        <div>
-          <label className="block mb-1">Danh mục phụ</label>
-          <input {...register("subCategory")} className="w-full border p-2 rounded" />
+        {/* Danh mục phụ & Size */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1 font-medium">Danh mục phụ</label>
+            <input {...register("subCategory")} className="w-full border p-2 rounded" />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Kích cỡ (S,M,L,XL)</label>
+            <input {...register("sizes")} placeholder="S,M,L" className="w-full border p-2 rounded" />
+          </div>
         </div>
 
-        <div>
-          <label className="block mb-1">Kích cỡ (S,M,L,XL)</label>
-          <input {...register("sizes")} placeholder="S,M,L" className="w-full border p-2 rounded" />
-        </div>
-
-        <div>
-          <label className="inline-flex items-center mr-4">
+        {/* Bestseller + New product */}
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center">
             <input type="checkbox" {...register("bestseller")} className="mr-2" /> Bestseller
           </label>
           <label className="inline-flex items-center">
@@ -340,22 +258,21 @@ const AddProductPage: React.FC = () => {
           </label>
         </div>
 
+        {/* Nút hành động */}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 border rounded">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 border rounded"
+          >
             Hủy
           </button>
           <button
             type="submit"
-            disabled={isBusy}
-            className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
           >
-            {id
-              ? mutationIsLoading(updateMutation)
-                ? "Đang cập nhật..."
-                : "Cập nhật"
-              : mutationIsLoading(addMutation)
-              ? "Đang thêm..."
-              : "Thêm"}
+            {id ? "Cập nhật" : "Thêm"}
           </button>
         </div>
       </form>

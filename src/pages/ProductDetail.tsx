@@ -199,7 +199,7 @@ const ProductDetail: React.FC = () => {
                   const val = Number(e.target.value);
                   if (!val || val < 1) setQty(1);
                 }}
-                className="w-16 text-center outline-none appearance-none bg-transparent
+                className="w-16 text-center outline-none bg-transparent
                 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
 
