@@ -63,6 +63,7 @@ const AddProductPage: React.FC = () => {
     },
   });
 
+  // Lấy dữ liệu khi chỉnh sửa
   const { data: existingProduct } = useQuery<Product | null>({
     queryKey: ["product", id ?? "no-id"],
     queryFn: async () => {
@@ -98,9 +99,9 @@ const AddProductPage: React.FC = () => {
         : [existingProduct.image as string];
       setPreviewImages(imgs);
     }
-  }, [existingProduct]);
+  }, [existingProduct, reset]);
 
-  // ✅ Khi chọn file → hiển thị ảnh preview ngay
+  // ✅ Khi chọn file → thêm preview (nhiều ảnh)
   const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -110,12 +111,20 @@ const AddProductPage: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         previews.push(reader.result as string);
-        if (previews.length === files.length) setPreviewImages(previews);
+        if (previews.length === files.length) {
+          setPreviewImages((prev) => [...prev, ...previews]);
+        }
       };
       reader.readAsDataURL(file);
     });
   };
 
+  // ❌ Xóa ảnh khỏi preview
+  const removeImage = (index: number) => {
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Mutation thêm / cập nhật
   const addMutation = useMutation({
     mutationFn: async (payload: any) => addProduct(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
@@ -134,8 +143,8 @@ const AddProductPage: React.FC = () => {
       image: previewImages.length
         ? previewImages
         : data.image
-        ? data.image.split(",").map((s) => s.trim())
-        : [],
+          ? data.image.split(",").map((s) => s.trim())
+          : [],
       category: data.category,
       subCategory: data.subCategory ?? "",
       sizes: data.sizes
@@ -199,7 +208,7 @@ const AddProductPage: React.FC = () => {
 
         {/* Ảnh sản phẩm */}
         <div>
-          <label className="block mb-1 font-medium">Ảnh</label>
+          <label className="block mb-1 font-medium">Ảnh sản phẩm</label>
           <input
             type="file"
             accept="image/*"
@@ -207,20 +216,31 @@ const AddProductPage: React.FC = () => {
             onChange={handleFilePreview}
             className="w-full border p-2 rounded"
           />
+
+          {/* Hiển thị ảnh preview */}
           {previewImages.length > 0 && (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {previewImages.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt={`preview-${i}`}
-                  className="w-24 h-24 object-cover rounded border"
-                />
+            <div className="mt-3 flex flex-wrap gap-3">
+              {previewImages.map((src, index) => (
+                <div key={index} className="relative w-28 h-28">
+                  <img
+                    src={src}
+                    alt={`preview-${index}`}
+                    className="w-full h-full object-cover rounded-lg border shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    aria-label={`Xóa ảnh ${index + 1}`}
+                    title={`Xóa ảnh ${index + 1}`}
+                    className="absolute top-1 right-1 bg-black bg-opacity-70 text-white rounded-full p-1 text-xs hover:bg-opacity-90 transition-opacity z-10"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           )}
         </div>
-
         {/* Danh mục */}
         <div>
           <label className="block mb-1 font-medium">Danh mục</label>
