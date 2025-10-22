@@ -13,16 +13,21 @@ const shippingFee = 30; // Phí ship cố định 30.000đ (Tài có thể đổ
 const grandTotal = total + shippingFee;
 
 
+
   const handleRemove = (id: number, size: string | null, name: string) => {
     removeFromCart(id, size ?? undefined);
-    toast.info(`Đã xóa ${name} khỏi giỏ hàng`);
+    toast.info(`Đã xóa ${name} khỏi giỏ hàng`, {
+      autoClose: 1500,
+    });
   };
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
     if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng không?")) {
       clearCart();
-      toast.success("Đã xóa toàn bộ sản phẩm");
+      toast.success("Đã xóa toàn bộ sản phẩm, giỏ hàng trống!", {
+        autoClose: 1500,
+      } );
     }
   };
 
@@ -83,7 +88,7 @@ const grandTotal = total + shippingFee;
                           </p>
                         )}
                         <p className="text-sm text-gray-500 mt-1">
-                          {item.price.toLocaleString()}.000đ
+                          {(item.price * item.quantity).toLocaleString()}.000đ
                         </p>
                       </div>
 
