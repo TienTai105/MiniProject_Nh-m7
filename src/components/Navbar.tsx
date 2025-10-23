@@ -1,5 +1,6 @@
+// src/components/Navbar.tsx (hoặc đường dẫn file hiện tại của bạn)
 import { useState, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -9,12 +10,13 @@ import {
   LogOut,
   UserCircle2,
 } from "lucide-react";
-import { Box } from "lucide-react";
 import { useThemeStore } from "../store/themeStore";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
   const { cart } = useCartStore();
@@ -32,6 +34,17 @@ const Navbar = () => {
     { name: "About", path: "/about" },
     { name: "Contact", path: "/contact" },
   ];
+
+  const handleLogout = () => {
+    try {
+      logout();                    
+    } catch (err) {
+      console.warn("Logout error", err);
+    }
+    setOpen(false);
+    setMenuOpen(false);
+    navigate("/login", { replace: true });
+  };
 
   return (
     <nav
@@ -73,11 +86,6 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* Manage products (visible to all users) */}
-          <Link to="/manage-products" title="Quản lý sản phẩm" className="text-gray-700 hover:text-blue-600">
-            <Box className="w-5 h-5" />
-          </Link>
-
           {/* Toggle theme */}
           <button onClick={toggleTheme}>
             {theme === "light" ? (
@@ -87,25 +95,37 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* User / Login */}
-          {user ? (
-            <div className="flex items-center gap-2">
-              <UserCircle2 className="w-6 h-6 text-blue-500" />
-              <span className="text-sm font-medium">{user}</span>
-              <button onClick={logout} title="Đăng xuất">
-                <LogOut className="w-5 h-5 text-gray-700 hover:text-red-500" />
-              </button>
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              title="Đăng nhập"
-              className="flex items-center gap-1 hover:text-blue-600"
-            >
-              <UserCircle2 className="w-6 h-6 text-gray-600 hover:text-blue-600" />
-              <span className="hidden sm:inline text-sm">Đăng nhập</span>
-            </Link>
-          )}
+          {/* admin / user */}
+          <div className="flex items-center gap-4">
+            {user ? (
+              <div className="relative">
+                <button className="flex items-center gap-2 p-2 rounded" onClick={() => setOpen((v) => !v)}>
+                  <UserCircle2 /> {user.username || user.email || user.name}
+                </button>
+                {open && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow p-2 z-50">
+                    <Link to="/profile-orders" className="block px-2 py-1 hover:bg-gray-100 text-gray-700">Đơn hàng của tôi</Link>
+                    <Link to="/profile" className="block px-2 py-1 hover:bg-gray-100 text-gray-700">Tài khoản</Link>
+                    {user.role === "admin" && (
+                      <Link to="/admin" className="block px-2 py-1 hover:bg-gray-100 text-gray-700">Trang quản trị</Link>
+                    )}
+                    <button
+                      className="w-full text-left px-2 py-1 hover:bg-gray-100 text-gray-700"
+                      onClick={handleLogout} 
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <Link to="/login" className="flex items-center gap-2 text-blue-600">
+                  <UserCircle2 className="w-5 h-5" /> Đăng nhập
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* Menu mobile */}
           <button
@@ -144,8 +164,7 @@ const Navbar = () => {
               {user ? (
                 <button
                   onClick={() => {
-                    logout();
-                    setMenuOpen(false);
+                    handleLogout(); // <-- dùng handler để logout + redirect + đóng menu
                   }}
                   className="flex items-center gap-2 text-red-500"
                 >

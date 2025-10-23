@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from "react";
+import { useAuthStore } from "../store/authStore";
+
+const ProfileOrdersPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [orders, setOrders] = useState<any[]>([]);
+
+  const loadOrdersForUser = () => {
+    try {
+      const raw = localStorage.getItem("orders") || "[]";
+      const arr = JSON.parse(raw);
+      if (!user) {
+        setOrders([]);
+        return;
+      }
+      const filtered = arr.filter((o: any) => {
+        if (!o.user) return false;
+        // ưu tiên so sánh id, fallback email
+        if (user.id && o.user.id) return String(o.user.id) === String(user.id);
+        return (o.user.email || "").toLowerCase() === (user.email || "").toLowerCase();
+      });
+      // sort newest first
+      setOrders(filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (err) {
+      console.error("Load orders error", err);
+      setOrders([]);
+    }
+  };
+
+  useEffect(() => {
+    loadOrdersForUser();
+    // listen to storage events (update if orders changed in another tab / admin)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "orders") loadOrdersForUser();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  if (!user) return <div className="p-6">Vui lòng đăng nhập</div>;
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <h2 className="text-xl font-semibold mb-4">Đơn hàng của {user.name || user.email}</h2>
+
+      {orders.length === 0 && <div className="text-gray-500">Chưa có đơn hàng</div>}
+
+      <div className="space-y-4">
+        {orders.map((o) => (
+          <div key={o.id} className="border rounded p-3">
+            <div className="flex flex-col sm:flex-row justify-between">
+              <div>
+                <div className="font-semibold">Đơn: {o.id}</div>
+                <div className="text-xs text-gray-400">Ngày: {new Date(o.createdAt).toLocaleString()}</div>
+              </div>
+              <div className="mt-2 sm:mt-0 text-right">
+                <div className="text-sm">Tổng: <span className="font-semibold">{(o.total || o.subtotal || 0).toLocaleString('vi-VN')}.000 VND</span></div>
+                <div className="text-sm">Trạng thái: <span className="font-medium">{o.status}</span></div>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t pt-3">
+              <div className="text-sm font-medium mb-2">Sản phẩm</div>
+              <div className="space-y-2">
+                {o.items.map((it: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-3">
+                      <img src={it.image || "/no-image.png"} alt={it.name} className="w-12 h-12 object-cover rounded" />
+                      <div>
+                        <div className="font-medium">{it.name}</div>
+                        <div className="text-xs text-gray-500">{it.size ? `Size: ${it.size}` : ""} • x{it.quantity}</div>
+                      </div>
+                    </div>
+                    <div className="font-medium">{((it.price || 0) * (it.quantity || 1)).toLocaleString('vi-VN')}.000 VND</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ProfileOrdersPage;

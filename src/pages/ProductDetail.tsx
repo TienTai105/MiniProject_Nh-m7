@@ -135,6 +135,8 @@ const ProductDetail: React.FC = () => {
           </p>
 
           <div className="mt-4">
+            <div className="text-2xl font-bold  ">
+              <p>{displayPrice.toLocaleString()},000 VND</p>
             <div className="text-2xl font-bold text-gray-900">
               {displayPrice.toLocaleString()},000 VND
             </div>
@@ -143,12 +145,14 @@ const ProductDetail: React.FC = () => {
             </div>
           </div>
 
+          <p className="mt-6  whitespace-pre-line">{product.description}</p>
           <p className="mt-6 text-gray-700 whitespace-pre-line">
             {product.description}
           </p>
 
           {/* Chọn size */}
           <div className="mt-6">
+            <div className="text-sm mb-2">Size</div>
             <div className="text-sm text-gray-600 mb-2">Chọn size</div>
             <div className="flex flex-wrap gap-2">
               {sizesToShow.map((s) => (
@@ -165,6 +169,9 @@ const ProductDetail: React.FC = () => {
                 </button>
               ))}
             </div>
+            {sizesToShow.length > 0 && selectedSize && <div className="mt-2 text-sm ">Selected: <strong>{selectedSize}</strong></div>}
+            {sizesArray.length === 0 && (
+              <div className="mt-2 text-xs ">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
             {sizesToShow.length > 0 && selectedSize && (
               <div className="mt-2 text-sm text-gray-600">
                 Đã chọn: <strong>{selectedSize}</strong>
@@ -223,6 +230,10 @@ const ProductDetail: React.FC = () => {
                 }
 
                 const idNum = Number(product.id) || Date.now();
+                const img = Array.isArray(product.image) ? product.image[0] || "" : product.image || "";
+
+            addToCartStore({ id: idNum, name: product.name, price: product.price, image: img, quantity: qty, size: selectedSize || null });
+                toast.success('Đã thêm vào giỏ hàng');
                 const img = Array.isArray(product.image)
                   ? product.image[0] || ""
                   : product.image || "";

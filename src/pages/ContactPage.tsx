@@ -4,14 +4,14 @@ const ContactPage: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-4 text-center">📞 Liên hệ với MyShop</h1>
-      <p className="text-center text-gray-600 mb-8">
+      <p className="text-center mb-8">
         Nếu bạn có thắc mắc hoặc cần hỗ trợ, hãy để lại thông tin bên dưới.
         Chúng tôi sẽ phản hồi sớm nhất có thể 
       </p>
 
       {/* Thông tin liên hệ */}
       <div className="bg-gray-100 p-6 rounded-xl shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-3">Thông tin cửa hàng</h2>
+        <h2 className="text-xl font-semibold mb-3 text-black">Thông tin cửa hàng</h2>
         <p className="text-gray-700 ">Địa chỉ: An Phú Đông , Quận 12, TP.HCM</p>
         <p className="text-gray-700">Điện thoại: 0909 888 999</p>
         <p className="text-gray-700">Email: Nhom7@myshop.vn</p>
@@ -19,15 +19,15 @@ const ContactPage: React.FC = () => {
       </div>
 
       {/* Form liên hệ */}
-      <form
+      <form 
         onSubmit={(e) => {
           e.preventDefault();
           alert("Cảm ơn bạn! Tin nhắn của bạn đã được gửi.");
         }}
         className="bg-gray-100 p-6 rounded-xl shadow-md mb-8"
       >
-        <div>
-          <label className="block font-medium mb-1">Họ và tên</label>
+        <div >
+          <label className="block font-medium mb-1 text-black">Họ và tên</label>
           <input
             type="text"
             required
@@ -37,7 +37,7 @@ const ContactPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block font-medium mb-1">Email</label>
+          <label className="block font-medium mb-1 text-black">Email</label>
           <input
             type="email"
             required
@@ -47,7 +47,7 @@ const ContactPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block font-medium mb-1">Nội dung</label>
+          <label className="block font-medium mb-1 text-black">Nội dung</label>
           <textarea
             required
             rows={4}

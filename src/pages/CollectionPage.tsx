@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import ProductList from "../components/ProductList";
 import type { Product } from "../types/product";
 import { getProducts } from "../api";
-import { useNavigate } from "react-router-dom";
 
 const CollectionPage: React.FC = () => {
   const [filter, setFilter] = useState<"all" | "bestseller" | "newproduct">("all");
@@ -21,46 +20,35 @@ const CollectionPage: React.FC = () => {
     return products;
   }, [products, filter]);
 
-
-  const navigate = useNavigate();
-  const handleNavigateToAdd = () => navigate("/add-product");
-
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Bộ sưu tập sản phẩm</h2>
-        <button
-          onClick={handleNavigateToAdd}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          Thêm sản phẩm
-        </button>
       </div>
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 text-black">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-1 rounded ${filter === "all" ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+              className={`px-3 py-1 rounded ${filter === "all" ? "bg-blue-600" : "bg-gray-100"}`}
             >
               All
             </button>
             <button
               onClick={() => setFilter("bestseller")}
-              className={`px-3 py-1 rounded ${filter === "bestseller" ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+              className={`px-3 py-1 rounded ${filter === "bestseller" ? "bg-blue-600" : "bg-gray-100"}`}
             >
               Bestseller
             </button>
             <button
               onClick={() => setFilter("newproduct")}
-              className={`px-3 py-1 rounded ${filter === "newproduct" ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+              className={`px-3 py-1 rounded ${filter === "newproduct" ? "bg-blue-600" : "bg-gray-100"}`}
             >
               New Product
             </button>
           </div>
-          <div className="text-sm text-gray-600">{filtered.length} sản phẩm</div>
+          <div className="text-sm">{filtered.length} sản phẩm</div>
         </div>
 
         <section>
