@@ -78,6 +78,28 @@ const ProductDetail: React.FC = () => {
   const displayPrice = product.price;
   const formattedDate = new Date(product.date).toLocaleDateString();
 
+  const handleAddToCart = () => {
+    if (sizesArray.length > 0 && !selectedSize) {
+      toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
+      return;
+    }
+
+    const idNum = Number(product.id) || Date.now();
+    const img = Array.isArray(product.image) ? product.image[0] ?? "" : product.image ?? "";
+    const quantity = typeof qty === "number" ? qty : Number(qty) || 1;
+
+    addToCartStore({
+      id: idNum,
+      name: product.name,
+      price: product.price,
+      image: img,
+      quantity,
+      size: selectedSize || null,
+    });
+
+    toast.success("Đã thêm vào giỏ hàng");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <button
@@ -135,20 +157,11 @@ const ProductDetail: React.FC = () => {
           </p>
 
           <div className="mt-4">
-            <div className="text-2xl font-bold  ">
-              <p>{displayPrice.toLocaleString()},000 VND</p>
-            <div className="text-2xl font-bold text-gray-900">
-              {displayPrice.toLocaleString()},000 VND
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Cập nhật: {formattedDate}
-            </div>
+            <div className="text-2xl font-bold text-gray-900">{displayPrice.toLocaleString()},000 VND</div>
+            <div className="text-sm text-gray-500 mt-1">Cập nhật: {formattedDate}</div>
           </div>
 
-          <p className="mt-6  whitespace-pre-line">{product.description}</p>
-          <p className="mt-6 text-gray-700 whitespace-pre-line">
-            {product.description}
-          </p>
+          <p className="mt-6 whitespace-pre-line text-gray-700">{product.description}</p>
 
           {/* Chọn size */}
           <div className="mt-6">
@@ -169,13 +182,13 @@ const ProductDetail: React.FC = () => {
                 </button>
               ))}
             </div>
-            {sizesToShow.length > 0 && selectedSize && <div className="mt-2 text-sm ">Selected: <strong>{selectedSize}</strong></div>}
-            {sizesArray.length === 0 && (
-              <div className="mt-2 text-xs ">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
+
             {sizesToShow.length > 0 && selectedSize && (
-              <div className="mt-2 text-sm text-gray-600">
-                Đã chọn: <strong>{selectedSize}</strong>
-              </div>
+              <div className="mt-2 text-sm text-gray-600">Đã chọn: <strong>{selectedSize}</strong></div>
+            )}
+
+            {sizesArray.length === 0 && (
+              <div className="mt-2 text-xs">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
             )}
           </div>
 
@@ -223,32 +236,7 @@ const ProductDetail: React.FC = () => {
             </div>
 
             <button
-              onClick={() => {
-                if (sizesArray.length > 0 && !selectedSize) {
-                  toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
-                  return;
-                }
-
-                const idNum = Number(product.id) || Date.now();
-                const img = Array.isArray(product.image) ? product.image[0] || "" : product.image || "";
-
-            addToCartStore({ id: idNum, name: product.name, price: product.price, image: img, quantity: qty, size: selectedSize || null });
-                toast.success('Đã thêm vào giỏ hàng');
-                const img = Array.isArray(product.image)
-                  ? product.image[0] || ""
-                  : product.image || "";
-
-                addToCartStore({
-                  id: idNum,
-                  name: product.name,
-                  price: product.price,
-                  image: img,
-                  quantity: typeof qty === "number" ? qty : 1,
-                  size: selectedSize || null,
-                });
-
-                toast.success("Đã thêm vào giỏ hàng");
-              }}
+              onClick={handleAddToCart}
               className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
             >
               Thêm vào giỏ
