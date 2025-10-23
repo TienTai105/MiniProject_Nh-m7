@@ -101,7 +101,6 @@ const AddProductPage: React.FC = () => {
     }
   }, [existingProduct, reset]);
 
-  // ✅ Khi chọn file → thêm preview (nhiều ảnh)
   const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -119,7 +118,7 @@ const AddProductPage: React.FC = () => {
     });
   };
 
-  // ❌ Xóa ảnh khỏi preview
+  
   const removeImage = (index: number) => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };

@@ -6,6 +6,8 @@ import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 type LoginFormInputs = {
   username: string; 
@@ -89,28 +91,40 @@ const LoginPage: React.FC = () => {
       }
       const success = loginStore(ADMIN_EMAIL, ADMIN_PW);
       if (!success) {
-        alert("Đăng nhập admin thất bại");
+        toast.error("Đăng nhập admin thất bại", {
+          autoClose: 1500
+        });
         return;
       }
+      toast.success("Đăng nhập thành công tài khoản admin", {
+        autoClose: 1500
+      });
+      
       navigate("/admin");
       return;
     }
 
     const found = users.find((u) => u.email === username && u.password === password);
     if (!found) {
-      alert("Email hoặc mật khẩu không đúng (hoặc chưa đăng ký).");
+        toast.error("Email hoặc mật khẩu không đúng (hoặc chưa đăng ký).", {
+        autoClose: 1500
+      });
       return;
     }
 
     const role = found.role || "user";
     const success = loginStore(username, password);
     if (!success) {
-      alert("Đăng nhập thất bại");
+      toast.error("Đăng nhập thất bại.", {
+        autoClose: 1500
+      });
       return;
     }
-
+      toast.success("Đăng nhập thành công!", {
+        autoClose: 1500
+      });
     if (role === "admin") navigate("/admin");
-    else navigate("/account");
+    else navigate("/");
   };
 
   return (
@@ -169,11 +183,11 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            Chưa có tài khoản? <a href="/register" className="text-blue-600 hover:underline">Đăng ký</a>
+            Chưa có tài khoản? <Link to="/register" className="text-blue-600 hover:underline">Đăng ký</Link>
           </div>
           <div className="mt-6 text-center text-sm dark:text-gray-300">
             Admin - admin123@gmail.com | admin123
-            <br/>User - abc@gmail.com | 1234
+            <br />User - abc@gmail.com | 1234
           </div>
         </div>
       </div>

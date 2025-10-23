@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from "react";
-
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 const AdminDashboard: React.FC = () => {
   const [overview, setOverview] = useState({ users: 0, products: 0, orders: 0, revenue: 0 });
+  const [productCount, setProductCount] = useState<number>(0);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<any[]>([]);
 
   const loadOverview = () => {
     try {
@@ -17,10 +28,32 @@ const AdminDashboard: React.FC = () => {
         orders: Array.isArray(orders) ? orders.length : 0,
         revenue,
       });
+
+      const monthData: Record<string, number> = {};
+      (Array.isArray(orders) ? orders : []).forEach((order: any) => {
+        if (!order.createdAt) return;
+        const d = new Date(order.createdAt);
+        const month = `${d.getMonth() + 1}/${d.getFullYear()}`;
+        const total = Number(order.total) || Number(order.subtotal) || 0;
+        monthData[month] = (monthData[month] || 0) + total;
+      });
+
+      // Sắp xếp theo thời gian
+      const sorted = Object.entries(monthData)
+        .map(([month, revenue]) => ({ month, revenue }))
+        .sort((a, b) => {
+          const [ma, ya] = a.month.split("/").map(Number);
+          const [mb, yb] = b.month.split("/").map(Number);
+          return ya !== yb ? ya - yb : ma - mb;
+        });
+
+      setMonthlyRevenue(sorted);
     } catch (err) {
+      console.error(err);
       setOverview({ users: 0, products: 0, orders: 0, revenue: 0 });
     }
   };
+
 
   useEffect(() => {
     loadOverview();
@@ -30,6 +63,25 @@ const AdminDashboard: React.FC = () => {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  useEffect(() => {
+    const fetchProductCount = async () => {
+      try {
+        const res = await fetch("https://68ef2e22b06cc802829c5e18.mockapi.io/api/products");
+        const data = await res.json();
+        setProductCount(data.length);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm:", error);
+      }
+    };
+
+    fetchProductCount();
+  }, []);
+
+  const chartData = monthlyRevenue.map(item => ({
+    month: item.month,
+    revenue: item.revenue * 1000,
+  }));
 
   return (
     <div>
@@ -42,7 +94,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Sản phẩm</p>
-          <p className="text-3xl font-bold">{overview.products}</p>
+          <p className="text-3xl font-bold">{productCount}</p>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <p className="text-sm text-gray-500">Đơn hàng</p>
@@ -54,7 +106,46 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      
+      <div className="bg-white p-6 rounded-2xl shadow-md">
+        <h3 className="text-xl font-semibold mb-4">Doanh thu theo tháng</h3>
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis
+              tickFormatter={(value) =>
+                value >= 1000000
+                  ? (value / 1000000).toFixed(1) + "M"
+                  : value >= 1000
+                    ? (value / 1000).toFixed(1) + "K"
+                    : value
+              }
+            />
+            <Tooltip
+              formatter={(v: number) => `${v.toLocaleString()}₫`}
+              labelFormatter={(label) => `Tháng ${label}`}
+            />
+            <Legend />
+
+            <defs>
+              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.9} />
+                <stop offset="95%" stopColor="#FFD166" stopOpacity={0.5} />
+              </linearGradient>
+            </defs>
+
+            <Bar 
+            dataKey="revenue"
+              fill="url(#colorRevenue)"
+              radius={[10, 10, 0, 0]}
+              animationBegin={200}
+              animationDuration={1200}
+              animationEasing="ease-out" />
+          </BarChart>
+
+        </ResponsiveContainer>
+      </div>
+
     </div>
   );
 };

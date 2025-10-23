@@ -15,11 +15,9 @@ const ProfileOrdersPage: React.FC = () => {
       }
       const filtered = arr.filter((o: any) => {
         if (!o.user) return false;
-        // ưu tiên so sánh id, fallback email
         if (user.id && o.user.id) return String(o.user.id) === String(user.id);
         return (o.user.email || "").toLowerCase() === (user.email || "").toLowerCase();
       });
-      // sort newest first
       setOrders(filtered.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (err) {
       console.error("Load orders error", err);
@@ -29,13 +27,11 @@ const ProfileOrdersPage: React.FC = () => {
 
   useEffect(() => {
     loadOrdersForUser();
-    // listen to storage events (update if orders changed in another tab / admin)
     const onStorage = (e: StorageEvent) => {
       if (e.key === "orders") loadOrdersForUser();
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   if (!user) return <div className="p-6">Vui lòng đăng nhập</div>;
@@ -52,7 +48,7 @@ const ProfileOrdersPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between">
               <div>
                 <div className="font-semibold">Đơn: {o.id}</div>
-                <div className="text-xs text-gray-400">Ngày: {new Date(o.createdAt).toLocaleString()}</div>
+                <div className="text-xs text-gray-400">{new Date(o.createdAt).toLocaleString()}</div>
               </div>
               <div className="mt-2 sm:mt-0 text-right">
                 <div className="text-sm">Tổng: <span className="font-semibold">{(o.total || o.subtotal || 0).toLocaleString('vi-VN')}.000 VND</span></div>

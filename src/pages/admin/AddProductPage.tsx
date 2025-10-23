@@ -7,19 +7,18 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { addProduct, updateProduct, getProductById } from "../../api";
-import type { Product } from "../../types/product"; 
+import type { Product } from "../../types/product";
 
 const schema = yup.object({
   name: yup.string().required("Tên sản phẩm là bắt buộc"),
   price: (yup as any)
     .number()
     .typeError("Phải là số")
-    .transform((_v: any, orig: any) => (orig === "" || orig == null ? undefined : Number(orig)))
+    .transform((_v: any, orig: any) =>
+      orig === "" || orig == null ? undefined : Number(orig)
+    )
     .positive("Phải lớn hơn 0")
     .required("Giá là bắt buộc"),
-  image: yup
-    .string()
-    .required("Vui lòng dán URL ảnh (hoặc nhiều URL, ngăn cách bởi dấu ,)"),
   category: yup.string().required("Danh mục là bắt buộc"),
 });
 
@@ -27,7 +26,7 @@ type FormValues = {
   id?: string;
   name: string;
   price: number | string;
-  image: string; 
+  image?: string;
   description?: string;
   category: string;
   subCategory?: string;
@@ -42,8 +41,7 @@ const AddProductPage: React.FC = () => {
   const qc = useQueryClient();
   const { id } = useParams<{ id?: string }>();
 
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [previewFromFileName, setPreviewFromFileName] = useState<string | null>(null); // optional filename shown
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
 
   const {
     register,
@@ -65,8 +63,8 @@ const AddProductPage: React.FC = () => {
     },
   });
 
-
-  const { data: existingProduct, isLoading: isFetchingProduct, error: productError } = useQuery<Product | null>({
+  // Lấy dữ liệu khi chỉnh sửa
+  const { data: existingProduct } = useQuery<Product | null>({
     queryKey: ["product", id ?? "no-id"],
     queryFn: async () => {
       if (!id) return null;
@@ -76,194 +74,202 @@ const AddProductPage: React.FC = () => {
   });
 
   useEffect(() => {
-    if (productError) {
-      console.error("getProductById error", productError);
-      toast.error("Không tải được sản phẩm: " + (productError?.message || productError));
-    }
-  }, [productError]);
-
-  useEffect(() => {
     if (!existingProduct) return;
     reset({
       id: existingProduct.id,
       name: existingProduct.name ?? "",
       price: existingProduct.price ?? "",
-      image: Array.isArray(existingProduct.image) ? (existingProduct.image as string[]).join(", ") : (existingProduct.image as unknown as string) ?? "",
+      image: Array.isArray(existingProduct.image)
+        ? existingProduct.image.join(", ")
+        : (existingProduct.image as string) ?? "",
       description: existingProduct.description ?? "",
       category: existingProduct.category ?? "",
       subCategory: existingProduct.subCategory ?? "",
-      sizes: existingProduct.sizes ? (existingProduct.sizes as string[]).join(", ") : "",
+      sizes: existingProduct.sizes
+        ? existingProduct.sizes.join(", ")
+        : "",
       date: existingProduct.date ?? Date.now(),
       bestseller: !!existingProduct.bestseller,
       newproduct: !!existingProduct.newproduct,
     });
 
     if (existingProduct.image) {
-      const first = Array.isArray(existingProduct.image) ? existingProduct.image[0] : (existingProduct.image as unknown as string);
-      if (first && typeof first === "string" && !first.startsWith("data:")) {
-        setPreviewImage(first);
-      }
+      const imgs = Array.isArray(existingProduct.image)
+        ? existingProduct.image
+        : [existingProduct.image as string];
+      setPreviewImages(imgs);
     }
-  }, [existingProduct]);
+  }, [existingProduct, reset]);
 
-  const handlePreviewOnly = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPreviewFromFileName(file.name);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      setPreviewImage(dataUrl);
-      toast.info("Ảnh đã được preview. Lưu ý: để lưu sản phẩm, hãy dán URL ảnh vào ô 'Ảnh' (hoặc upload lên một dịch vụ lưu ảnh).");
-    };
-    reader.readAsDataURL(file);
+  const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const previews: string[] = [];
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        previews.push(reader.result as string);
+        if (previews.length === files.length) {
+          setPreviewImages((prev) => [...prev, ...previews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
+  
+  const removeImage = (index: number) => {
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Mutation thêm / cập nhật
   const addMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      return await addProduct(payload);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-    },
+    mutationFn: async (payload: any) => addProduct(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (product: Product) => {
-      return await updateProduct(product);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-    },
+    mutationFn: async (product: Product) => updateProduct(product),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 
   const onSubmit = (data: FormValues) => {
-    const imageRaw = data.image?.trim() ?? "";
-    if (!imageRaw) {
-      toast.error("Vui lòng dán URL ảnh vào ô 'Ảnh' trước khi lưu (không gửi base64 trực tiếp).");
-      return;
-    }
-
-    if (imageRaw.startsWith("data:")) {
-      toast.error("Phát hiện base64 trong ô 'Ảnh'. Vui lòng upload ảnh lên dịch vụ ảnh và dán URL tại đây thay vì dán base64.");
-      return;
-    }
-
     const productPayload: Omit<Product, "id"> = {
       name: data.name,
       description: data.description ?? "",
       price: Number(data.price),
-      image: imageRaw.split(",").map((s) => s.trim()).filter(Boolean),
+      image: previewImages.length
+        ? previewImages
+        : data.image
+          ? data.image.split(",").map((s) => s.trim())
+          : [],
       category: data.category,
       subCategory: data.subCategory ?? "",
-      sizes: data.sizes ? data.sizes.split(",").map((s) => s.trim()).filter(Boolean) : [],
+      sizes: data.sizes
+        ? data.sizes.split(",").map((s) => s.trim())
+        : [],
       date: typeof data.date === "number" ? data.date : Date.now(),
       bestseller: !!data.bestseller,
       newproduct: !!data.newproduct,
     };
 
     if (id) {
-      const productToUpdate: Product = { ...(productPayload as Product), id };
-      console.log("PUT ->", productToUpdate);
-      updateMutation.mutate(productToUpdate, {
+      updateMutation.mutate({ ...productPayload, id } as Product, {
         onSuccess: () => {
           toast.success("Cập nhật sản phẩm thành công");
-          navigate("/collection");
+          navigate("/admin/products");
         },
-        onError: (err: any) => {
-          console.error("Update error:", err);
-          toast.error("Cập nhật thất bại: " + (err?.message || "Lỗi"));
-        },
+        onError: (err: any) =>
+          toast.error("Cập nhật thất bại: " + (err?.message || "Lỗi")),
       });
     } else {
-      console.log("POST ->", productPayload);
       addMutation.mutate(productPayload as any, {
-        onSuccess: (res: any) => {
-          const createdId = res?.id;
+        onSuccess: () => {
           toast.success("Thêm sản phẩm thành công");
-          try { localStorage.setItem("lastCreatedProductId", createdId); } catch {}
-          if (createdId) navigate(`/products/edit/${createdId}`);
-          else navigate("/collection");
+          navigate("/admin/products");
         },
-        onError: (err: any) => {
-          console.error("Add error:", err);
-          if (err?.response?.status === 413) {
-            toast.error("Thêm thất bại: payload quá lớn. Vui lòng sử dụng URL ảnh thay vì gửi ảnh base64.");
-          } else {
-            toast.error("Thêm thất bại: " + (err?.message || "Lỗi"));
-          }
-        },
+        onError: (err: any) =>
+          toast.error("Thêm thất bại: " + (err?.message || "Lỗi")),
       });
     }
   };
 
-  const mutationIsLoading = (m: any) => {
-    if (!m) return false;
-    if (typeof m.isLoading === "boolean") return m.isLoading;
-    if (typeof m.status === "string") return m.status === "loading";
-    return false;
-  };
-
-  const isBusy = Boolean(isSubmitting) || mutationIsLoading(addMutation) || mutationIsLoading(updateMutation) || Boolean(isFetchingProduct);
-
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">{id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}</h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">
+        {id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
+      </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Tên sản phẩm */}
         <div>
-          <label className="block mb-1">Tên sản phẩm</label>
+          <label className="block mb-1 font-medium">Tên sản phẩm</label>
           <input {...register("name")} className="w-full border p-2 rounded" />
-          {errors.name && <p className="text-sm text-red-600">{String(errors.name.message)}</p>}
+          {errors.name && (
+            <p className="text-sm text-red-600">{errors.name.message}</p>
+          )}
         </div>
 
+        {/* Giá */}
         <div>
-          <label className="block mb-1">Giá</label>
-          <input type="number" {...register("price")} className="w-full border p-2 rounded" step="any" />
-          {errors.price && <p className="text-sm text-red-600">{String(errors.price.message)}</p>}
-        </div>
-        <div>
-          <label className="block mb-1">Ảnh</label>
+          <label className="block mb-1 font-medium">Giá</label>
           <input
-            type="text"
-            placeholder="https://example.com/img1.jpg hoặc /img2.jpg"
-            {...register("image")}
+            type="number"
+            {...register("price")}
+            className="w-full border p-2 rounded"
+            step="any"
+          />
+          {errors.price && (
+            <p className="text-sm text-red-600">{errors.price.message}</p>
+          )}
+        </div>
+
+        {/* Ảnh sản phẩm */}
+        <div>
+          <label className="block mb-1 font-medium">Ảnh sản phẩm</label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFilePreview}
             className="w-full border p-2 rounded"
           />
-          <div className="mt-2 text-sm text-gray-600">
-            LƯU Ý: Chọn file để xem preview, viết URL để lưu ảnh).
-          </div>
-          <input type="file" accept="image/*" onChange={handlePreviewOnly} className="w-full mt-2" />
-          {previewFromFileName && <div className="text-xs text-gray-500 mt-1">Preview từ file: {previewFromFileName}</div>}
-          {previewImage && (
-            <img src={previewImage} alt="Preview" className="mt-2 w-40 h-40 object-contain rounded shadow-md" />
+
+          {/* Hiển thị ảnh preview */}
+          {previewImages.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {previewImages.map((src, index) => (
+                <div key={index} className="relative w-28 h-28">
+                  <img
+                    src={src}
+                    alt={`preview-${index}`}
+                    className="w-full h-full object-cover rounded-lg border shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    aria-label={`Xóa ảnh ${index + 1}`}
+                    title={`Xóa ảnh ${index + 1}`}
+                    className="absolute top-1 right-1 bg-black bg-opacity-70 text-white rounded-full p-1 text-xs hover:bg-opacity-90 transition-opacity z-10"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
-          {errors.image && <p className="text-sm text-red-600 mt-1">{String(errors.image.message)}</p>}
         </div>
-
+        {/* Danh mục */}
         <div>
-          <label className="block mb-1">Danh mục</label>
+          <label className="block mb-1 font-medium">Danh mục</label>
           <input {...register("category")} className="w-full border p-2 rounded" />
-          {errors.category && <p className="text-sm text-red-600">{String(errors.category.message)}</p>}
+          {errors.category && (
+            <p className="text-sm text-red-600">{errors.category.message}</p>
+          )}
         </div>
 
+        {/* Mô tả */}
         <div>
-          <label className="block mb-1">Mô tả</label>
+          <label className="block mb-1 font-medium">Mô tả</label>
           <textarea {...register("description")} className="w-full border p-2 rounded" />
         </div>
 
-        <div>
-          <label className="block mb-1">Danh mục phụ</label>
-          <input {...register("subCategory")} className="w-full border p-2 rounded" />
+        {/* Danh mục phụ & Size */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1 font-medium">Danh mục phụ</label>
+            <input {...register("subCategory")} className="w-full border p-2 rounded" />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Kích cỡ (S,M,L,XL)</label>
+            <input {...register("sizes")} placeholder="S,M,L" className="w-full border p-2 rounded" />
+          </div>
         </div>
 
-        <div>
-          <label className="block mb-1">Kích cỡ (S,M,L)</label>
-          <input {...register("sizes")} placeholder="S,M,L" className="w-full border p-2 rounded" />
-        </div>
-
-        <div>
-          <label className="inline-flex items-center mr-4">
+        {/* Bestseller + New product */}
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center">
             <input type="checkbox" {...register("bestseller")} className="mr-2" /> Bestseller
           </label>
           <label className="inline-flex items-center">
@@ -271,12 +277,21 @@ const AddProductPage: React.FC = () => {
           </label>
         </div>
 
+        {/* Nút hành động */}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={() => navigate(-1)} className="px-4 py-2 border rounded">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 border rounded"
+          >
             Hủy
           </button>
-          <button type="submit" disabled={isBusy} className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50">
-            {id ? (mutationIsLoading(updateMutation) ? "Đang cập nhật..." : "Cập nhật") : (mutationIsLoading(addMutation) ? "Đang thêm..." : "Thêm")}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {id ? "Cập nhật" : "Thêm"}
           </button>
         </div>
       </form>

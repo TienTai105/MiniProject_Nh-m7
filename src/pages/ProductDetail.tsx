@@ -1,10 +1,12 @@
-// src/pages/ProductDetail.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Product } from "../types/product";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
-
+import { motion } from "framer-motion"; 
+import "swiper/swiper-bundle.css";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const ProductDetail: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newProducts, setNewProducts] = useState<Product[]>([]); // ✅ sản phẩm mới
 
   const [mainIndex, setMainIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -54,6 +57,16 @@ const ProductDetail: React.FC = () => {
     };
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    fetch("https://68ef2e22b06cc802829c5e18.mockapi.io/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const latest = data.slice(-6).reverse(); 
+        setNewProducts(latest);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   if (loading)
     return (
@@ -110,13 +123,12 @@ const ProductDetail: React.FC = () => {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: ảnh sản phẩm */}
         <div>
-          <div className="h-[520px] w-full bg-gray-100 flex items-center justify-center aspect-[3/4] hover:shadow-lg transition-shadow duration-300 rounded-md overflow-hidden">
+          <div className="h-[520px] w-full bg-gray-100 flex items-center justify-center aspect-[3/4] duration-300 rounded-md overflow-hidden">
             <img
               src={product.image?.[mainIndex]}
               alt={`${product.name}-${mainIndex}`}
-              className="object-cover w-auto h-full transition-transform duration-300"
+              className="w-full h-full object-contain bg-white"
             />
           </div>
 
@@ -126,9 +138,8 @@ const ProductDetail: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => setMainIndex(idx)}
-                  className={`w-20 h-20 border rounded-md overflow-hidden ${
-                    idx === mainIndex ? "ring-2 ring-blue-500" : ""
-                  }`}
+                  className={`w-20 h-20 border rounded-md overflow-hidden ${idx === mainIndex ? "ring-2 ring-blue-500" : ""
+                    }`}
                 >
                   <img
                     src={img}
@@ -141,7 +152,6 @@ const ProductDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Right: thông tin sản phẩm */}
         <div>
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{product.name}</h1>
@@ -157,26 +167,29 @@ const ProductDetail: React.FC = () => {
           </p>
 
           <div className="mt-4">
-            <div className="text-2xl font-bold text-gray-900">{displayPrice.toLocaleString()},000 VND</div>
-            <div className="text-sm text-gray-500 mt-1">Cập nhật: {formattedDate}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {displayPrice.toLocaleString()},000 ₫
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Cập nhật: {formattedDate}
+            </div>
           </div>
 
-          <p className="mt-6 whitespace-pre-line text-gray-700">{product.description}</p>
+          <p className="mt-6 whitespace-pre-line text-gray-700">
+            {product.description}
+          </p>
 
-          {/* Chọn size */}
           <div className="mt-6">
             <div className="text-sm mb-2">Size</div>
-            <div className="text-sm text-gray-600 mb-2">Chọn size</div>
             <div className="flex flex-wrap gap-2">
               {sizesToShow.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}
-                  className={`px-3 py-1 border rounded-md text-sm ${
-                    selectedSize === s
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700"
-                  }`}
+                  className={`px-3 py-1 border rounded-md text-sm ${selectedSize === s
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700"
+                    }`}
                 >
                   {s}
                 </button>
@@ -184,15 +197,12 @@ const ProductDetail: React.FC = () => {
             </div>
 
             {sizesToShow.length > 0 && selectedSize && (
-              <div className="mt-2 text-sm text-gray-600">Đã chọn: <strong>{selectedSize}</strong></div>
-            )}
-
-            {sizesArray.length === 0 && (
-              <div className="mt-2 text-xs">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
+              <div className="mt-2 text-sm text-gray-600">
+                Đã chọn: <strong>{selectedSize}</strong>
+              </div>
             )}
           </div>
 
-          {/* Nhập số lượng + nút thêm */}
           <div className="mt-6 flex items-center gap-4">
             <div className="flex items-center border rounded-md">
               <button
@@ -225,9 +235,7 @@ const ProductDetail: React.FC = () => {
 
               <button
                 onClick={() =>
-                  setQty((q) =>
-                    typeof q === "number" ? q + 1 : 1
-                  )
+                  setQty((q) => (typeof q === "number" ? q + 1 : 1))
                 }
                 className="px-3 py-2 text-lg font-medium"
               >
@@ -244,6 +252,89 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+<section className="mt-16">
+  <h2 className="text-2xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
+    Sản phẩm mới
+  </h2>
+
+  <Swiper
+    modules={[Navigation, Pagination, Autoplay]}
+    spaceBetween={20}
+    slidesPerView={5}
+    navigation
+    pagination={{ clickable: true }}
+    autoplay={{ delay: 3000 }}
+    breakpoints={{
+      320: { slidesPerView: 1 },
+      640: { slidesPerView: 2 },
+      1024: { slidesPerView: 3 },
+      1280: { slidesPerView: 5 },
+    }}
+    className="pb-10"
+  >
+    {newProducts
+      .filter((item) => item.newproduct) // 🟩 chỉ lấy sản phẩm mới
+      .map((item, idx) => (
+        <SwiperSlide key={item.id}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
+          >
+            <div
+              onClick={() => navigate(`/products/${item.id}`)}
+              className="block overflow-hidden cursor-pointer"
+            >
+              <img
+                src={Array.isArray(item.image) ? item.image[0] : item.image}
+                alt={item.name}
+                className="w-full h-[260px] object-cover transform hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+
+            <div className="p-4 flex flex-col justify-between flex-1">
+              <h3
+                onClick={() => navigate(`/products/${item.id}`)}
+                className="block text-sm font-semibold text-gray-900 text-center min-h-[42px] hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                {item.name}
+              </h3>
+
+              <div className="text-sm text-gray-700 font-medium mb-3 text-center">
+                <p>{item.price.toLocaleString()},000 VND</p>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 mt-auto">
+                <button
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm cursor-pointer hover:bg-blue-700 transition-colors"
+                  onClick={() => {
+                    addToCartStore({
+                      id: Number(item.id),
+                      name: item.name,
+                      price: item.price,
+                      image: Array.isArray(item.image) ? item.image[0] : item.image,
+                      quantity: 1,
+                      size: null,
+                    });
+                    toast.success("Đã thêm vào giỏ hàng");
+                  }}
+                >
+                  Add to cart
+                </button>
+                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-md font-medium">
+                  New
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </SwiperSlide>
+      ))}
+  </Swiper>
+</section>
+
+
     </div>
   );
 };

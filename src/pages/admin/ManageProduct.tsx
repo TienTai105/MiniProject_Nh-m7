@@ -7,13 +7,12 @@ import { toast } from "react-toastify";
 const ManageProduct: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // 🔹 Lấy danh sách sản phẩm
+
   const { data: products, isLoading, isError } = useQuery({
     queryKey: ["products"],
     queryFn: getProducts,
   });
 
-  // 🔹 Xóa sản phẩm
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
     onSuccess: () => {
@@ -39,7 +38,7 @@ const ManageProduct: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Quản lý sản phẩm</h2>
         <Link
-          to="/add-product"
+          to="/admin/add-product"
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
           + Thêm sản phẩm
@@ -75,7 +74,7 @@ const ManageProduct: React.FC = () => {
                   <td className="p-2">{p.category}</td>
                   <td className="p-2 text-center space-x-2">
                     <Link
-                      to={`/edit-product/${p.id}`}
+                      to={`/admin/edit-product/${p.id}`}
                       className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
                       Sửa
