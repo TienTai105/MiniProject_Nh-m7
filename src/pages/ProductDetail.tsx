@@ -119,16 +119,16 @@ const ProductDetail: React.FC = () => {
           <p className="text-gray-500 text-sm mt-2">{product.category} / {product.subCategory}</p>
 
           <div className="mt-4">
-            <div className="text-2xl font-bold text-gray-900 ">
+            <div className="text-2xl font-bold  ">
               <p>{displayPrice.toLocaleString()},000 VND</p>
             </div>
             <div className="text-sm text-gray-500 mt-1">Update: {formattedDate}</div>
           </div>
 
-          <p className="mt-6 text-gray-700 whitespace-pre-line">{product.description}</p>
+          <p className="mt-6  whitespace-pre-line">{product.description}</p>
 
           <div className="mt-6">
-            <div className="text-sm text-gray-600 mb-2">Size</div>
+            <div className="text-sm mb-2">Size</div>
             <div className="flex flex-wrap gap-2">
               {sizesToShow.map((s) => (
                 <button
@@ -142,9 +142,9 @@ const ProductDetail: React.FC = () => {
                 </button>
               ))}
             </div>
-            {sizesToShow.length > 0 && selectedSize && <div className="mt-2 text-sm text-gray-600">Selected: <strong>{selectedSize}</strong></div>}
+            {sizesToShow.length > 0 && selectedSize && <div className="mt-2 text-sm ">Selected: <strong>{selectedSize}</strong></div>}
             {sizesArray.length === 0 && (
-              <div className="mt-2 text-xs text-gray-500">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
+              <div className="mt-2 text-xs ">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
             )}
           </div>
 
@@ -179,8 +179,6 @@ const ProductDetail: React.FC = () => {
 
             addToCartStore({ id: idNum, name: product.name, price: product.price, image: img, quantity: qty, size: selectedSize || null });
                 toast.success('Đã thêm vào giỏ hàng');
-                // Optionally navigate to cart or keep user on detail page
-                // navigate('/cart');
               }}
               className="px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >

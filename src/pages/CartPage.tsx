@@ -1,9 +1,11 @@
 import React from "react";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const CartPage: React.FC = () => {
     const { cart, removeFromCart, clearCart, increaseQuantity, decreaseQuantity, updateQuantity } = useCartStore();
+    const navigate = useNavigate();
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -33,21 +35,21 @@ const CartPage: React.FC = () => {
                     {/* Left: items */}
                     <div className="lg:col-span-8 space-y-4">
                         <div className="bg-white shadow-sm rounded-md p-4">
-                            <h3 className="font-medium text-lg mb-2">Sản phẩm</h3>
+                            <h3 className="font-medium text-lg mb-2 text-gray-700">Sản phẩm</h3>
                             <div className="divide-y">
                                 {cart.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-4 py-4">
-                                        <img src={item.image} alt={item.name} className="h-24 w-24 object-cover rounded-md border" />
+                                    <div key={item.id} className="flex items-center gap-4 py-4 text-gray-700">
+                                        <img src={item.image} alt={item.name} className="h-24 w-24 object-cover rounded-md border " />
 
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <p className="font-semibold">{item.name}</p>
                                                     {item.size && <p className="text-sm text-gray-500 mt-1">Size: <span className="font-medium">{item.size}</span></p>}
-                                                    <p className="text-sm text-gray-500 mt-1">{item.price.toLocaleString()}.000đ</p>
+                                                    <p className="text-sm text-gray-500 mt-1">{item.price.toLocaleString()}.000 VND</p>
                                                 </div>
 
-                                                <button onClick={() => handleRemove(item.id, item.size ?? null, item.name)} className="text-red-500 text-sm">Xóa</button>
+                                                <button onClick={() => handleRemove(item.id, item.size ?? null, item.name)} className="text-red-500 text-lg cursor-pointer">Xóa</button>
                                             </div>
 
                                             <div className="mt-3 flex items-center gap-4">
@@ -63,7 +65,7 @@ const CartPage: React.FC = () => {
                                                     <button onClick={() => handleIncrease(item.id, item.size ?? null, item.name)} className="px-3 py-1 text-lg">+</button>
                                                 </div>
 
-                                                <div className="text-sm text-gray-600">Subtotal: <span className="font-semibold">{(item.price * item.quantity).toLocaleString()}.000đ</span></div>
+                                                <div className="text-sm text-gray-600">Subtotal: <span className="font-semibold">{(item.price * item.quantity).toLocaleString()}.000 VND</span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -74,13 +76,13 @@ const CartPage: React.FC = () => {
 
                     {/* Right: summary (sticky on large screens) */}
                     <aside className="lg:col-span-4">
-                        <div className="lg:sticky lg:top-20 bg-white shadow-sm rounded-md p-4">
+                        <div className="lg:sticky lg:top-20 bg-white shadow-sm rounded-md p-4 text-gray-700">
                             <h3 className="font-semibold text-lg mb-4">Tóm tắt đơn hàng</h3>
 
                             <div className="space-y-3 mb-4">
                                 <div className="flex justify-between text-sm text-gray-600">
                                     <span>Tạm tính</span>
-                                    <span className="font-medium">{total.toLocaleString()}.000đ</span>
+                                    <span className="font-medium">{total.toLocaleString()}.000 VND</span>
                                 </div>
 
                                 <div className="flex justify-between text-sm text-gray-600">
@@ -97,11 +99,16 @@ const CartPage: React.FC = () => {
                             <div className="border-t pt-4 mb-4">
                                 <div className="flex justify-between text-lg font-semibold">
                                     <span>Tổng</span>
-                                    <span>{total.toLocaleString()}.000đ</span>
+                                    <span>{total.toLocaleString()}.000 VND</span>
                                 </div>
                             </div>
 
-                            <button className="w-full bg-blue-600 text-white py-3 rounded mb-3">Tiến hành thanh toán</button>
+                            <button
+                              onClick={() => navigate('/checkout')}
+                              className="w-full bg-blue-600 text-white py-3 rounded mb-3 cursor-pointer"
+                            >
+                              Tiến hành thanh toán
+                            </button>
 
                             <button onClick={() => { clearCart(); toast.info('Giỏ hàng đã được làm trống'); }} className="w-full border rounded py-2 text-red-600">Xóa toàn bộ</button>
                         </div>
