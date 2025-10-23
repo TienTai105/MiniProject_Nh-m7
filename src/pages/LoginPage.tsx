@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { Link } from "react-router-dom";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
@@ -49,9 +50,35 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const loginStore = useAuthStore((s) => s.login);
   const [showPassword, setShowPassword] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+
+  // Lắng nghe sự thay đổi của localStorage từ các tab khác
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'users') {
+        try {
+          const updatedUsers = e.newValue ? JSON.parse(e.newValue) : [];
+          setUsers(updatedUsers);
+        } catch (err) {
+          console.error('Error parsing users from storage event:', err);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     seedAdminIfMissing();
+    // Load users khi component mount
+    try {
+      const usersFromStorage = JSON.parse(localStorage.getItem('users') || '[]');
+      setUsers(usersFromStorage);
+    } catch (err) {
+      console.error('Error loading initial users:', err);
+      setUsers([]);
+    }
   }, []);
 
   const {
@@ -66,15 +93,11 @@ const LoginPage: React.FC = () => {
     const username = String(data.username).trim().toLowerCase();
     const password = String(data.password);
 
-    let users: any[] = [];
-    try {
-      users = JSON.parse(localStorage.getItem("users") || "[]");
-    } catch {
-      users = [];
-    }
+    // Sử dụng state users thay vì đọc trực tiếp từ localStorage
+    let currentUsers = users;
 
     if (username === ADMIN_EMAIL && password === ADMIN_PW) {
-      let admin = users.find((u) => u.email === ADMIN_EMAIL && u.role === "admin");
+      let admin = currentUsers.find((u) => u.email === ADMIN_EMAIL && u.role === "admin");
       if (!admin) {
         admin = {
           id: makeId(),
@@ -84,8 +107,9 @@ const LoginPage: React.FC = () => {
           role: "admin",
           createdAt: new Date().toISOString(),
         };
-        users.push(admin);
-        localStorage.setItem("users", JSON.stringify(users));
+        currentUsers = [...currentUsers, admin];
+        localStorage.setItem("users", JSON.stringify(currentUsers));
+        setUsers(currentUsers); // Cập nhật state
       }
       const success = loginStore(ADMIN_EMAIL, ADMIN_PW);
       if (!success) {
@@ -96,7 +120,7 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    const found = users.find((u) => u.email === username && u.password === password);
+    const found = currentUsers.find((u) => u.email === username && u.password === password);
     if (!found) {
       alert("Email hoặc mật khẩu không đúng (hoặc chưa đăng ký).");
       return;
@@ -110,7 +134,7 @@ const LoginPage: React.FC = () => {
     }
 
     if (role === "admin") navigate("/admin");
-    else navigate("/account");
+    else navigate("/admin");
   };
 
   return (
@@ -169,7 +193,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            Chưa có tài khoản? <a href="/register" className="text-blue-600 hover:underline">Đăng ký</a>
+            Chưa có tài khoản? <Link to="/register" className="text-blue-600 hover:underline">Đăng ký</Link>
           </div>
           <div className="mt-6 text-center text-sm dark:text-gray-300">
             Admin - admin123@gmail.com | admin123
