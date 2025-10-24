@@ -66,12 +66,13 @@ const Navbar = () => {
           {/* Giỏ hàng */}
           <Link to="/cart" className="relative">
             <ShoppingCart className="w-5 h-5 cursor-pointer hover:text-blue-600" />
-            {totalItems > 0 && (
+            {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {totalItems}
+                {cart.length}
               </span>
             )}
           </Link>
+
 
           {/* Manage products (visible to all users) */}
           <Link to="/manage-products" title="Quản lý sản phẩm" className="text-gray-700 hover:text-blue-600">

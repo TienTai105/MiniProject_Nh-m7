@@ -1,16 +1,16 @@
 // src/pages/ProductDetail.tsx
-import React, { useEffect , useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Product } from "../types/product";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
-
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,29 +18,42 @@ const ProductDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState<number>(1);
   const addToCartStore = useCartStore((s) => s.addToCart);
-  
-  // derive sizes array once
+
   const sizesArray: string[] = React.useMemo(() => {
     if (!product) return [];
     const sizesRaw: any = (product as any).sizes;
     if (Array.isArray(sizesRaw)) return sizesRaw;
-    if (typeof sizesRaw === "string") return (sizesRaw as string).split(",").map((s: string) => s.trim()).filter(Boolean);
+    if (typeof sizesRaw === "string")
+      return (sizesRaw as string)
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
     return [];
   }, [product]);
-  // fallback standard sizes when product doesn't specify sizes
+
   const standardSizes = React.useMemo(() => ["S", "M", "L", "XL", "XXL"], []);
   const sizesToShow = sizesArray.length > 0 ? sizesArray : standardSizes;
 
-    useEffect(() => {
+  useEffect(() => {
     if (!id) return;
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        console.log("Fetching product id:", id); // debug
-        const res = await fetch(`https://68ef2e22b06cc802829c5e18.mockapi.io/api/products/${id}`);
+        const res = await fetch(
+          `https://68ef2e22b06cc802829c5e18.mockapi.io/api/products/${id}`
+        );
         if (!res.ok) throw new Error("Không thể tải sản phẩm");
         const data: Product = await res.json();
         setProduct(data);
+
+        const relatedRes = await fetch(
+          `https://68ef2e22b06cc802829c5e18.mockapi.io/api/products`
+        );
+        const allProducts: Product[] = await relatedRes.json();
+        const sameCategory = allProducts
+          .filter((p) => p.category === data.category && p.id !== data.id)
+          .slice(0, 4);
+        setRelatedProducts(sameCategory);
       } catch (err) {
         console.error(err);
         setError("Không thể tải thông tin sản phẩm");
@@ -63,13 +76,18 @@ const ProductDetail: React.FC = () => {
   if (error || !product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <button onClick={() => navigate(-1)} className="mb-4 text-sm text-blue-600 cursor-pointer">← Back</button>
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-4 text-sm text-blue-600 cursor-pointer"
+        >
+          ← Back
+        </button>
         <div>Sản phẩm không tìm thấy</div>
       </div>
     );
   }
-  const displayPrice = product.price; 
 
+  const displayPrice = product.price;
   const formattedDate =
     typeof product.date === "number"
       ? new Date(product.date).toLocaleDateString()
@@ -77,8 +95,14 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <button onClick={() => navigate(-1)} className="mb-6 text-sm text-blue-600 cursor-pointer">← Back</button>
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-6 text-sm text-blue-600 cursor-pointer"
+      >
+        ← Back
+      </button>
 
+      {/* ---------- Phần chi tiết ---------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: ảnh chính */}
         <div>
@@ -86,7 +110,7 @@ const ProductDetail: React.FC = () => {
             <img
               src={product.image?.[mainIndex]}
               alt={`${product.name}-${mainIndex}`}
-              className="object-cover w-auto h-full transition-transform duration-300 "
+              className="object-cover w-auto h-full transition-transform duration-300"
             />
           </div>
 
@@ -100,7 +124,11 @@ const ProductDetail: React.FC = () => {
                     idx === mainIndex ? "ring-2 ring-blue-500" : ""
                   }`}
                 >
-                  <img src={img} alt={`${product.name}-thumb-${idx}`} className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`${product.name}-thumb-${idx}`}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -110,23 +138,32 @@ const ProductDetail: React.FC = () => {
         {/* Right: thông tin sản phẩm */}
         <div>
           <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold ">{product.name}</h1>
+            <h1 className="text-2xl font-semibold">{product.name}</h1>
             {product.bestseller && (
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-md">Bestseller</span>
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-md">
+                Bestseller
+              </span>
             )}
           </div>
 
-          <p className="text-gray-500 text-sm mt-2">{product.category} / {product.subCategory}</p>
+          <p className="text-gray-500 text-sm mt-2">
+            {product.category} / {product.subCategory}
+          </p>
 
           <div className="mt-4">
-            <div className="text-2xl font-bold text-gray-900 ">
+            <div className="text-2xl font-bold text-gray-900">
               <p>{displayPrice.toLocaleString()},000 VND</p>
             </div>
-            <div className="text-sm text-gray-500 mt-1">Update: {formattedDate}</div>
+            <div className="text-sm text-gray-500 mt-1">
+              Update: {formattedDate}
+            </div>
           </div>
 
-          <p className="mt-6 text-gray-700 whitespace-pre-line">{product.description}</p>
+          <p className="mt-6 text-gray-700 whitespace-pre-line">
+            {product.description}
+          </p>
 
+          {/* Chọn size */}
           <div className="mt-6">
             <div className="text-sm text-gray-600 mb-2">Size</div>
             <div className="flex flex-wrap gap-2">
@@ -135,33 +172,63 @@ const ProductDetail: React.FC = () => {
                   key={s}
                   onClick={() => setSelectedSize(s)}
                   className={`px-3 py-1 border rounded-md text-sm ${
-                    selectedSize === s ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700"
+                    selectedSize === s
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700"
                   }`}
                 >
                   {s}
                 </button>
               ))}
             </div>
-            {sizesToShow.length > 0 && selectedSize && <div className="mt-2 text-sm text-gray-600">Selected: <strong>{selectedSize}</strong></div>}
+            {sizesToShow.length > 0 && selectedSize && (
+              <div className="mt-2 text-sm text-gray-600">
+                Selected: <strong>{selectedSize}</strong>
+              </div>
+            )}
             {sizesArray.length === 0 && (
-              <div className="mt-2 text-xs text-gray-500">Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn S/M/L/XL/XXL</div>
+              <div className="mt-2 text-xs text-gray-500">
+                Sản phẩm không có size rõ ràng — bạn có thể chọn size chuẩn
+                S/M/L/XL/XXL
+              </div>
             )}
           </div>
 
+          {/* Chọn số lượng + Add to cart */}
           <div className="mt-6 flex items-center gap-4">
             <div className="flex items-center border rounded-md">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
                 className="px-3 py-2"
-                aria-label="- quantity"
               >
-                -
+                −
               </button>
-              <div className="px-4">{qty}</div>
+              <input
+                type="number"
+                value={qty}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (isNaN(value)) return;
+
+                  if (value <= 0) {
+                    if (
+                      window.confirm(
+                        "Số lượng không thể nhỏ hơn 1. Bạn có muốn đặt lại về 1 không?"
+                      )
+                    ) {
+                      setQty(1);
+                      toast.info("Số lượng đã được đặt lại về 1");
+                    }
+                  } else {
+                    setQty(value);
+                  }
+                }}
+                min={1}
+                className="w-16 text-center border-x outline-none appearance-none no-spinner"
+              />
               <button
                 onClick={() => setQty((q) => q + 1)}
                 className="px-3 py-2"
-                aria-label="+ quantity"
               >
                 +
               </button>
@@ -170,17 +237,25 @@ const ProductDetail: React.FC = () => {
             <button
               onClick={() => {
                 if (sizesArray.length > 0 && !selectedSize) {
-                  toast.error('Vui lòng chọn size trước khi thêm vào giỏ');
+                  toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
                   return;
                 }
 
                 const idNum = Number(product.id) || Date.now();
-                const img = Array.isArray(product.image) ? product.image[0] || "" : product.image || "";
+                const img = Array.isArray(product.image)
+                  ? product.image[0] || ""
+                  : product.image || "";
 
-            addToCartStore({ id: idNum, name: product.name, price: product.price, image: img, quantity: qty, size: selectedSize || null });
-                toast.success('Đã thêm vào giỏ hàng');
-                // Optionally navigate to cart or keep user on detail page
-                // navigate('/cart');
+                addToCartStore({
+                  id: idNum,
+                  name: product.name,
+                  price: product.price,
+                  image: img,
+                  quantity: qty,
+                  size: selectedSize || null,
+                });
+
+                toast.success("Đã thêm vào giỏ hàng");
               }}
               className="px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
@@ -189,6 +264,38 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ---------- Phần sản phẩm liên quan ---------- */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-xl font-semibold mb-6 text-gray-800">
+            Sản phẩm liên quan
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            {relatedProducts.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => navigate(`/product/${item.id}`)}
+                className="cursor-pointer border rounded-lg p-3 hover:shadow-lg transition bg-white"
+              >
+                <div className="w-full h-56 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
+                  <img
+                    src={Array.isArray(item.image) ? item.image[0] : item.image}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
+                <h3 className="mt-3 text-sm font-medium text-gray-800 line-clamp-2">
+                  {item.name}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {item.price.toLocaleString()},000 VND
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
