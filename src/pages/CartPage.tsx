@@ -1,7 +1,9 @@
+import React, { useState } from "react";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
+import ConfirmModal from "../components/ConfirmModal";
 
 const CartPage: React.FC = () => {
     const { cart, removeFromCart, clearCart, increaseQuantity, decreaseQuantity, updateQuantity } = useCartStore();
@@ -174,7 +176,124 @@ const CartPage: React.FC = () => {
                 </div>
             </div>
         </div>
-    );
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="p-3">Sản phẩm</th>
+                  <th className="p-3">Giá</th>
+                  <th className="p-3">Số lượng</th>
+                  <th className="p-3">Tổng</th>
+                  <th className="p-3 text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cart.map((item) => (
+                  <tr key={item.id + (item.size ?? "")} className="border-b hover:bg-gray-50 transition">
+                    {/* Hình ảnh + tên */}
+                    <td className="p-3 flex items-center gap-4">
+                      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-md border bg-white flex justify-center items-center">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{item.name}</p>
+                        {item.size && (
+                          <p className="text-sm text-gray-500">Size: {item.size}</p>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Giá */}
+                    <td className="p-3 text-gray-700">
+                      {item.price.toLocaleString()},000₫
+                    </td>
+
+                    {/* Số lượng */}
+                    <td className="p-3">
+                      <div className="flex items-center border rounded-md w-fit">
+                        <button
+                          onClick={() => handleDecrease(item.id, item.size ?? null)}
+                          className="px-3 py-1 text-lg"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            setQuantity(
+                              item.id,
+                              item.size ?? null,
+                              parseInt(e.target.value)
+                            )
+                          }
+                          className="w-12 text-center outline-none border-x appearance-none no-spinner"
+                        />
+                        <button
+                          onClick={() => increaseQuantity(item.id, item.size ?? null)}
+                          className="px-3 py-1 text-lg"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* Tổng */}
+                    <td className="p-3 text-gray-800 font-medium">
+                      {(item.price * item.quantity).toLocaleString()},000₫
+                    </td>
+
+                    {/* Nút xóa */}
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => handleRemove(item.id, item.size ?? null)}
+                        className="text-red-600 hover:text-red-800 transition"
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Tổng tiền */}
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={handleClearCart}
+              className="px-5 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition"
+            >
+              Xóa toàn bộ giỏ hàng
+            </button>
+
+            <div className="text-right">
+              <p className="text-lg font-semibold">
+                Tổng cộng: {total.toLocaleString()},000₫
+              </p>
+              <button className="mt-3 px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                Thanh toán
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal xác nhận */}
+      <ConfirmModal
+        show={showModal}
+        message={modalMessage}
+        onConfirm={confirmAction}
+        onCancel={cancelAction}
+      />
+    </div>
+  );
 };
 
 export default CartPage;
