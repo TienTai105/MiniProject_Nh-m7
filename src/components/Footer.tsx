@@ -8,7 +8,7 @@ const Footer = () => {
         
         <div>
           <h2 className={`text-2xl font-bold mb-3 ${theme === "dark" ? "text-white" : "text-gray-800"}`}>MyShop</h2>
-          <p className={`text-gray-500 text-sm leading-6 `}>
+          <p className={` text-sm leading-6`}>
             Nơi mua sắm những sản phẩm chất lượng cao với giá tốt nhất.
             Chúng tôi luôn mang lại trải nghiệm tuyệt vời cho khách hàng.
           </p>
@@ -18,7 +18,7 @@ const Footer = () => {
           <h3 className={`text-lg font-semibold mb-3 ${theme === "dark" ? "text-white" : "text-gray-800"}`}>
             Liên kết nhanh
           </h3>
-          <ul className={`space-y-2 text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+          <ul className={`space-y-2 text-sm ${theme === "dark" ? "text-black" : "text-white"}`}>
             <li><a href="/" className="text-gray-500 hover:text-blue-600">Trang chủ</a></li>
             <li><a href="/collection" className="text-gray-500 hover:text-blue-600">Bộ sưu tập</a></li>
             <li><a href="/about" className="text-gray-500 hover:text-blue-600">Về chúng tôi</a></li>
@@ -38,7 +38,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="text-center text-gray-500 text-sm mt-10 border-t border-gray-100 pt-5">
+      <div className="text-center  text-sm mt-10 border-t border-gray-100 pt-5">
         © {new Date().getFullYear()} MyShop. All rights reserved.
       </div>
     </footer>

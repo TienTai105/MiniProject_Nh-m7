@@ -7,7 +7,6 @@ type Props = {
     onAddToCart?: (p: Product) => void;
 };
 
-
 const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
   const navigate = useNavigate();
     const img =
@@ -49,8 +48,6 @@ const ProductCard: React.FC<Props> = ({ product, onAddToCart }) => {
           <button
             className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm cursor-pointer hover:bg-blue-700 transition-colors"
             onClick={() => {
-              // On listing pages we navigate to the product detail so user can choose size/qty.
-              // If a parent explicitly provided onAddToCart (legacy), still call it.
               if (onAddToCart) {
                 onAddToCart(product);
                 return;

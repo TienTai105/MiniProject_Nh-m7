@@ -1,10 +1,12 @@
-// src/pages/ProductDetail.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Product } from "../types/product";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
-
+import { motion } from "framer-motion"; 
+import "swiper/swiper-bundle.css";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -13,12 +15,14 @@ const ProductDetail: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newProducts, setNewProducts] = useState<Product[]>([]); // ✅ sản phẩm mới
 
   const [mainIndex, setMainIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [qty, setQty] = useState<number>(1);
+  const [qty, setQty] = useState<number | string>(1);
   const addToCartStore = useCartStore((s) => s.addToCart);
 
+  // Xử lý sizes
   const sizesArray: string[] = React.useMemo(() => {
     if (!product) return [];
     const sizesRaw: any = (product as any).sizes;
@@ -61,19 +65,27 @@ const ProductDetail: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [id]);
 
-  if (loading) {
+  useEffect(() => {
+    fetch("https://68ef2e22b06cc802829c5e18.mockapi.io/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const latest = data.slice(-6).reverse(); 
+        setNewProducts(latest);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  if (loading)
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center text-gray-600">
         Đang tải sản phẩm...
       </div>
     );
-  }
 
-  if (error || !product) {
+  if (error || !product)
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
         <button
@@ -92,6 +104,28 @@ const ProductDetail: React.FC = () => {
     typeof product.date === "number"
       ? new Date(product.date).toLocaleDateString()
       : new Date(product.date).toLocaleDateString();
+  const handleAddToCart = () => {
+    // Bắt buộc chọn size trước khi thêm vào giỏ
+    if (!selectedSize) {
+      toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
+      return;
+    }
+
+    const idNum = Number(product.id) || Date.now();
+    const img = Array.isArray(product.image) ? product.image[0] ?? "" : product.image ?? "";
+    const quantity = typeof qty === "number" ? qty : Number(qty) || 1;
+
+    addToCartStore({
+      id: idNum,
+      name: product.name,
+      price: product.price,
+      image: img,
+      quantity,
+      size: selectedSize,
+    });
+
+    toast.success("Đã thêm vào giỏ hàng");
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -104,9 +138,8 @@ const ProductDetail: React.FC = () => {
 
       {/* ---------- Phần chi tiết ---------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: ảnh chính */}
         <div>
-          <div className="h-[520px] w-full bg-gray-100 flex items-center justify-center aspect-[3/4] hover:shadow-lg transition-shadow duration-300">
+          <div className="h-[520px] w-full bg-gray-100 flex items-center justify-center aspect-[3/4] duration-300 rounded-md overflow-hidden">
             <img
               src={product.image?.[mainIndex]}
               alt={`${product.name}-${mainIndex}`}
@@ -120,9 +153,8 @@ const ProductDetail: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => setMainIndex(idx)}
-                  className={`w-20 h-20 border rounded-md overflow-hidden ${
-                    idx === mainIndex ? "ring-2 ring-blue-500" : ""
-                  }`}
+                  className={`w-20 h-20 border rounded-md overflow-hidden ${idx === mainIndex ? "ring-2 ring-blue-500" : ""
+                    }`}
                 >
                   <img
                     src={img}
@@ -135,7 +167,6 @@ const ProductDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Right: thông tin sản phẩm */}
         <div>
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{product.name}</h1>
@@ -165,7 +196,7 @@ const ProductDetail: React.FC = () => {
 
           {/* Chọn size */}
           <div className="mt-6">
-            <div className="text-sm text-gray-600 mb-2">Size</div>
+            <div className="text-sm mb-2">Size</div>
             <div className="flex flex-wrap gap-2">
               {sizesToShow.map((s) => (
                 <button
@@ -235,31 +266,10 @@ const ProductDetail: React.FC = () => {
             </div>
 
             <button
-              onClick={() => {
-                if (sizesArray.length > 0 && !selectedSize) {
-                  toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
-                  return;
-                }
-
-                const idNum = Number(product.id) || Date.now();
-                const img = Array.isArray(product.image)
-                  ? product.image[0] || ""
-                  : product.image || "";
-
-                addToCartStore({
-                  id: idNum,
-                  name: product.name,
-                  price: product.price,
-                  image: img,
-                  quantity: qty,
-                  size: selectedSize || null,
-                });
-
-                toast.success("Đã thêm vào giỏ hàng");
-              }}
-              className="px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={handleAddToCart}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
             >
-              Add to cart
+              Thêm vào giỏ
             </button>
           </div>
         </div>
