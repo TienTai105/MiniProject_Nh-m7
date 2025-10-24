@@ -92,7 +92,8 @@ const ProductDetail: React.FC = () => {
   const formattedDate = new Date(product.date).toLocaleDateString();
 
   const handleAddToCart = () => {
-    if (sizesArray.length > 0 && !selectedSize) {
+    // Bắt buộc chọn size trước khi thêm vào giỏ
+    if (!selectedSize) {
       toast.error("Vui lòng chọn size trước khi thêm vào giỏ");
       return;
     }
@@ -107,7 +108,7 @@ const ProductDetail: React.FC = () => {
       price: product.price,
       image: img,
       quantity,
-      size: selectedSize || null,
+      size: selectedSize,
     });
 
     toast.success("Đã thêm vào giỏ hàng");

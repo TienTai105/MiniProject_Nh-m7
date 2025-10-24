@@ -25,6 +25,26 @@ const ProfileOrdersPage: React.FC = () => {
     }
   };
 
+  const deleteOrder = (orderId: string, orderStatus: string) => {
+    // Kiểm tra trạng thái đơn hàng
+    if (orderStatus === "Shipped" || orderStatus === "Delivered") {
+      alert("Không thể xóa đơn hàng đã được giao hoặc đang vận chuyển!");
+      return;
+    }
+    
+    if (!confirm("Bạn có chắc chắn muốn xóa đơn hàng này?")) return;
+    
+    try {
+      const raw = localStorage.getItem("orders") || "[]";
+      const arr = JSON.parse(raw);
+      const filtered = arr.filter((o: any) => o.id !== orderId);
+      localStorage.setItem("orders", JSON.stringify(filtered));
+      loadOrdersForUser();
+    } catch (err) {
+      console.error("Delete order error", err);
+    }
+  };
+
   useEffect(() => {
     loadOrdersForUser();
     const onStorage = (e: StorageEvent) => {
@@ -53,6 +73,18 @@ const ProfileOrdersPage: React.FC = () => {
               <div className="mt-2 sm:mt-0 text-right">
                 <div className="text-sm">Tổng: <span className="font-semibold">{(o.total || o.subtotal || 0).toLocaleString('vi-VN')}.000 VND</span></div>
                 <div className="text-sm">Trạng thái: <span className="font-medium">{o.status}</span></div>
+                {(o.status !== "Shipped" && o.status !== "Delivered") ? (
+                  <button
+                    onClick={() => deleteOrder(o.id, o.status)}
+                    className="mt-2 px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                  >
+                    Xóa đơn hàng
+                  </button>
+                ) : (
+                  <div className="mt-2 px-3 py-1 bg-gray-300 text-gray-600 text-xs rounded cursor-not-allowed">
+                    Không thể xóa
+                  </div>
+                )}
               </div>
             </div>
 

@@ -8,7 +8,7 @@ const CartPage: React.FC = () => {
 
     // Tính toán tổng tiền
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shippingFee = cart.length > 0 ? 30 : 0; // Phí ship cố định 30.000đ
+    const shippingFee = cart.length > 0 ? 30 : 0; // Phí ship cố định 30.000 VND
     const grandTotal = total + shippingFee;
 
     const handleRemove = (id: number, size: string | null, name: string) => {
@@ -95,7 +95,7 @@ const CartPage: React.FC = () => {
                                                     </p>
                                                 )}
                                                 <p className="text-sm text-gray-500 mt-1">
-                                                    {(item.price * item.quantity).toLocaleString()}.000đ
+                                                    {(item.price * item.quantity).toLocaleString()}.000 VND
                                                 </p>
                                             </div>
 
@@ -146,18 +146,18 @@ const CartPage: React.FC = () => {
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Tạm tính</span>
-                            <span className="font-medium text-gray-800">{total.toLocaleString()}.000đ</span>
+                            <span className="font-medium text-gray-800">{total.toLocaleString()}.000 VND</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Phí vận chuyển</span>
                             <span className="font-medium text-gray-800">
-                                {cart.length > 0 ? shippingFee.toLocaleString() : "0"}.000đ
+                                {cart.length > 0 ? shippingFee.toLocaleString() : "0"}.000 VND
                             </span>
                         </div>
                         <hr />
                         <div className="flex justify-between text-base font-semibold">
                             <span>Tổng cộng</span>
-                            <span className="text-blue-600">{grandTotal.toLocaleString()}.000đ</span>
+                            <span className="text-blue-600">{grandTotal.toLocaleString()}.000 VND</span>
                         </div>
                     </div>
 
