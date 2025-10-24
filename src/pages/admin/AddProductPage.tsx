@@ -42,6 +42,7 @@ const AddProductPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   const {
     register,
@@ -85,9 +86,7 @@ const AddProductPage: React.FC = () => {
       description: existingProduct.description ?? "",
       category: existingProduct.category ?? "",
       subCategory: existingProduct.subCategory ?? "",
-      sizes: existingProduct.sizes
-        ? existingProduct.sizes.join(", ")
-        : "",
+      sizes: existingProduct.sizes ? existingProduct.sizes.join(", ") : "",
       date: existingProduct.date ?? Date.now(),
       bestseller: !!existingProduct.bestseller,
       newproduct: !!existingProduct.newproduct,
@@ -101,24 +100,40 @@ const AddProductPage: React.FC = () => {
     }
   }, [existingProduct, reset]);
 
-  const handleFilePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Hàm upload ảnh lên Cloudinary
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const previews: string[] = [];
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        previews.push(reader.result as string);
-        if (previews.length === files.length) {
-          setPreviewImages((prev) => [...prev, ...previews]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "my_preset"); // preset bạn đã tạo
+      formData.append("cloud_name", "dgup7jtjx");
+
+      try {
+        const res = await fetch(
+          "https://api.cloudinary.com/v1_1/dgup7jtjx/image/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+        const data = await res.json();
+        if (data.secure_url) uploadedUrls.push(data.secure_url);
+      } catch (error) {
+        console.error("Lỗi upload:", error);
+        toast.error("Lỗi khi tải ảnh lên Cloudinary");
+      }
+    }
+
+    setPreviewImages((prev) => [...prev, ...uploadedUrls]);
+    setUploading(false);
   };
 
-  
   const removeImage = (index: number) => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -139,16 +154,10 @@ const AddProductPage: React.FC = () => {
       name: data.name,
       description: data.description ?? "",
       price: Number(data.price),
-      image: previewImages.length
-        ? previewImages
-        : data.image
-          ? data.image.split(",").map((s) => s.trim())
-          : [],
+      image: previewImages,
       category: data.category,
       subCategory: data.subCategory ?? "",
-      sizes: data.sizes
-        ? data.sizes.split(",").map((s) => s.trim())
-        : [],
+      sizes: data.sizes ? data.sizes.split(",").map((s) => s.trim()) : [],
       date: typeof data.date === "number" ? data.date : Date.now(),
       bestseller: !!data.bestseller,
       newproduct: !!data.newproduct,
@@ -212,11 +221,11 @@ const AddProductPage: React.FC = () => {
             type="file"
             accept="image/*"
             multiple
-            onChange={handleFilePreview}
+            onChange={handleFileUpload}
             className="w-full border p-2 rounded"
           />
+          {uploading && <p className="text-blue-600 mt-1">Đang tải ảnh lên...</p>}
 
-          {/* Hiển thị ảnh preview */}
           {previewImages.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-3">
               {previewImages.map((src, index) => (
@@ -229,8 +238,6 @@ const AddProductPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    aria-label={`Xóa ảnh ${index + 1}`}
-                    title={`Xóa ảnh ${index + 1}`}
                     className="absolute top-1 right-1 bg-black bg-opacity-70 text-white rounded-full p-1 text-xs hover:bg-opacity-90 transition-opacity z-10"
                   >
                     ✕
@@ -240,6 +247,7 @@ const AddProductPage: React.FC = () => {
             </div>
           )}
         </div>
+
         {/* Danh mục */}
         <div>
           <label className="block mb-1 font-medium">Danh mục</label>
@@ -288,10 +296,10 @@ const AddProductPage: React.FC = () => {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploading}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
           >
-            {id ? "Cập nhật" : "Thêm"}
+            {uploading ? "Đang tải ảnh..." : id ? "Cập nhật" : "Thêm"}
           </button>
         </div>
       </form>
