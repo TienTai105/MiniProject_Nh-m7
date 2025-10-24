@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Product } from "../types/product";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
-import { motion } from "framer-motion"; 
 import "swiper/swiper-bundle.css";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
+
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -15,11 +13,11 @@ const ProductDetail: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newProducts, setNewProducts] = useState<Product[]>([]); // ✅ sản phẩm mới
 
   const [mainIndex, setMainIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState<number | string>(1);
+  const prevQtyRef = useRef<number | string>(qty);
   const addToCartStore = useCartStore((s) => s.addToCart);
 
   // Xử lý sizes
@@ -69,13 +67,9 @@ const ProductDetail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    fetch("https://68ef2e22b06cc802829c5e18.mockapi.io/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        const latest = data.slice(-6).reverse(); 
-        setNewProducts(latest);
-      })
-      .catch((err) => console.error(err));
+    // previously fetched latest products into `newProducts` state; removed to avoid unused variable
+    // keep this effect empty or use for analytics if needed in future
+    return;
   }, []);
 
   if (loading)
@@ -97,7 +91,7 @@ const ProductDetail: React.FC = () => {
         <div>Sản phẩm không tìm thấy</div>
       </div>
     );
-  }
+
 
   const displayPrice = product.price;
   const formattedDate =
@@ -229,7 +223,7 @@ const ProductDetail: React.FC = () => {
           <div className="mt-6 flex items-center gap-4">
             <div className="flex items-center border rounded-md">
               <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                onClick={() => setQty((q) => Math.max(1, Number(q) - 1))}
                 className="px-3 py-2"
               >
                 −
@@ -237,28 +231,35 @@ const ProductDetail: React.FC = () => {
               <input
                 type="number"
                 value={qty}
+                onFocus={() => {
+                  prevQtyRef.current = qty;
+                }}
                 onChange={(e) => {
-                  const value = Number(e.target.value);
-                  if (isNaN(value)) return;
-
-                  if (value <= 0) {
-                    if (
-                      window.confirm(
-                        "Số lượng không thể nhỏ hơn 1. Bạn có muốn đặt lại về 1 không?"
-                      )
-                    ) {
-                      setQty(1);
-                      toast.info("Số lượng đã được đặt lại về 1");
-                    }
-                  } else {
-                    setQty(value);
+                  // allow free typing (including empty string)
+                  setQty(e.currentTarget.value);
+                }}
+                onBlur={(e) => {
+                  const v = String(e.currentTarget.value).trim();
+                  if (v === "") {
+                    // restore previous if user cleared and left
+                    setQty(prevQtyRef.current);
+                    return;
                   }
+                  const n = Number(v);
+                  if (isNaN(n) || n < 1) {
+                    setQty(prevQtyRef.current);
+                    return;
+                  }
+                  setQty(Math.max(1, n));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                 }}
                 min={1}
                 className="w-16 text-center border-x outline-none appearance-none no-spinner"
               />
               <button
-                onClick={() => setQty((q) => q + 1)}
+                onClick={() => setQty((q) => Number(q) + 1)}
                 className="px-3 py-2"
               >
                 +

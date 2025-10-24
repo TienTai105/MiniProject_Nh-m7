@@ -103,7 +103,7 @@ const RegisterPage: React.FC = () => {
       return;
     }
 
-    navigate("/account");
+    navigate("/login");
   };
 
   return (

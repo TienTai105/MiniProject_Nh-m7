@@ -81,7 +81,7 @@ const Navbar: React.FC = () => {
             <ShoppingCart className="w-5 h-5 cursor-pointer hover:text-blue-600" />
             {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {cart.length}
+                {totalItems}
               </span>
             )}
           </Link>

@@ -69,6 +69,9 @@ const ProfileOrdersPage: React.FC = () => {
               <div>
                 <div className="font-semibold">Đơn: {o.id}</div>
                 <div className="text-xs text-gray-400">{new Date(o.createdAt).toLocaleString()}</div>
+                {Array.isArray(o.statusHistory) && o.statusHistory.length > 0 && (
+                  <div className="text-xs text-gray-400">Cập nhật: {new Date(o.statusHistory[o.statusHistory.length - 1].at).toLocaleString()}</div>
+                )}
               </div>
               <div className="mt-2 sm:mt-0 text-right">
                 <div className="text-sm">Tổng: <span className="font-semibold">{(o.total || o.subtotal || 0).toLocaleString('vi-VN')}.000 VND</span></div>

@@ -77,13 +77,18 @@ const CheckoutPage: React.FC = () => {
   };
 
   // --- core: finalize order (used for both COD and successful momo) ---
-  const finalizeOrder = (opts: { paymentMethod: string; paymentStatus: "Pending" | "Paid" }) => {
+  const finalizeOrder = (opts: { paymentMethod: string; paymentStatus: "Pending" | "Paid" | "Failed" }) => {
     const raw = localStorage.getItem("orders");
     const orders = raw ? JSON.parse(raw) : [];
 
     const shippingAddr = addresses[selectedAddressIdx] || addresses[0] || emptyAddress();
+    const now = new Date().toISOString();
 
-    const newOrder = {
+    // determine initial order status: if payment received => Processing, otherwise Pending
+    let initialStatus = "Pending";
+    if (opts.paymentStatus === "Paid") initialStatus = "Processing";
+
+    const newOrder: any = {
       id: makeId(),
       user: {
         id: user?.id || null,
@@ -103,13 +108,19 @@ const CheckoutPage: React.FC = () => {
       })),
       subtotal,
       total,
-      status: "Pending",
+      status: initialStatus,
       paymentMethod: opts.paymentMethod,
       paymentStatus: opts.paymentStatus,
-      createdAt: new Date().toISOString(),
+      statusHistory: [
+        {
+          status: initialStatus,
+          at: now,
+          note: opts.paymentStatus === "Paid" ? "Thanh toán đã nhận" : "Đơn hàng tạo (chờ xử lý)",
+        },
+      ],
+      createdAt: now,
+      updatedAt: now,
     };
-
-    if (opts.paymentStatus === "Paid") newOrder.status = "Pending";
 
     orders.push(newOrder);
     localStorage.setItem("orders", JSON.stringify(orders));
