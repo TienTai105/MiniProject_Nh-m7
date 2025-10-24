@@ -20,7 +20,9 @@ const AdminDashboard: React.FC = () => {
       const products = JSON.parse(localStorage.getItem("products") || "[]");
       const orders = JSON.parse(localStorage.getItem("orders") || "[]");
 
-      const revenue = (Array.isArray(orders) ? orders : []).reduce((s: number, o: any) => s + (Number(o.total) || Number(o.subtotal) || 0), 0);
+  // Only count revenue for orders that have reached the 'Delivered' status
+  const deliveredOrders = (Array.isArray(orders) ? orders : []).filter((o: any) => String(o.status).toLowerCase() === "delivered");
+  const revenue = deliveredOrders.reduce((s: number, o: any) => s + (Number(o.total) || Number(o.subtotal) || 0), 0);
 
       setOverview({
         users: Array.isArray(users) ? users.length : 0,
@@ -30,9 +32,16 @@ const AdminDashboard: React.FC = () => {
       });
 
       const monthData: Record<string, number> = {};
-      (Array.isArray(orders) ? orders : []).forEach((order: any) => {
-        if (!order.createdAt) return;
-        const d = new Date(order.createdAt);
+      // Aggregate revenue only for delivered orders (use the deliveredOrders computed above)
+      // Use the timestamp when the order became 'Delivered' if available (statusHistory),
+      // otherwise fall back to updatedAt or createdAt.
+      deliveredOrders.forEach((order: any) => {
+        const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+        const deliveredEntry = history.slice().reverse().find((h: any) => String(h.status).toLowerCase() === "delivered");
+        const at = deliveredEntry?.at || order.updatedAt || order.createdAt;
+        if (!at) return;
+        const d = new Date(at);
+        if (isNaN(d.getTime())) return;
         const month = `${d.getMonth() + 1}/${d.getFullYear()}`;
         const total = Number(order.total) || Number(order.subtotal) || 0;
         monthData[month] = (monthData[month] || 0) + total;

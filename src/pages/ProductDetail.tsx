@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Product } from "../types/product";
 import { useCartStore } from "../store/cartStore";
 import { toast } from "react-toastify";
-import "swiper/swiper-bundle.css";
+// Swiper for related products slider
+// related products slider implemented with simple horizontal scroll (no external slider lib)
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +20,7 @@ const ProductDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState<number | string>(1);
   const prevQtyRef = useRef<number | string>(qty);
+  const relatedRef = useRef<HTMLDivElement | null>(null);
   const addToCartStore = useCartStore((s) => s.addToCart);
 
   // Xử lý sizes
@@ -52,10 +55,14 @@ const ProductDetail: React.FC = () => {
           `https://68ef2e22b06cc802829c5e18.mockapi.io/api/products`
         );
         const allProducts: Product[] = await relatedRes.json();
-        const sameCategory = allProducts
-          .filter((p) => p.category === data.category && p.id !== data.id)
-          .slice(0, 4);
-        setRelatedProducts(sameCategory);
+        // Prefer showing bestsellers. If none are marked, fallback to same category items.
+        const bestsellers = allProducts.filter((p) => p.bestseller && p.id !== data.id).slice(0, 8);
+        if (bestsellers.length > 0) {
+          setRelatedProducts(bestsellers);
+        } else {
+          const sameCategory = allProducts.filter((p) => p.category === data.category && p.id !== data.id).slice(0, 8);
+          setRelatedProducts(sameCategory);
+        }
       } catch (err) {
         console.error(err);
         setError("Không thể tải thông tin sản phẩm");
@@ -135,9 +142,9 @@ const ProductDetail: React.FC = () => {
         <div>
           <div className="h-[520px] w-full bg-gray-100 flex items-center justify-center aspect-[3/4] duration-300 rounded-md overflow-hidden">
             <img
-              src={product.image?.[mainIndex]}
+              src={Array.isArray(product.image) ? product.image[mainIndex] : (product.image as any)}
               alt={`${product.name}-${mainIndex}`}
-              className="object-cover w-auto h-full transition-transform duration-300"
+              className="object-cover w-full h-full transition-transform duration-300"
             />
           </div>
 
@@ -279,31 +286,62 @@ const ProductDetail: React.FC = () => {
       {/* ---------- Phần sản phẩm liên quan ---------- */}
       {relatedProducts.length > 0 && (
         <div className="mt-16">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800">
-            Sản phẩm liên quan
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-            {relatedProducts.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => navigate(`/product/${item.id}`)}
-                className="cursor-pointer border rounded-lg p-3 hover:shadow-lg transition bg-white"
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Sản phẩm liên quan</h2>
+          </div>
+
+          <div className="relative">
+            {/* Left overlay button */}
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
+              <button
+                aria-label="Previous related"
+                onClick={() => {
+                  const el = relatedRef.current || document.getElementById('related-scroll');
+                  if (el) (el as HTMLElement).scrollBy({ left: -320, behavior: 'smooth' });
+                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md border hover:bg-gray-50 transition"
               >
-                <div className="w-full h-56 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
-                  <img
-                    src={Array.isArray(item.image) ? item.image[0] : item.image}
-                    alt={item.name}
-                    className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
-                  />
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Right overlay button */}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+              <button
+                aria-label="Next related"
+                onClick={() => {
+                  const el = relatedRef.current || document.getElementById('related-scroll');
+                  if (el) (el as HTMLElement).scrollBy({ left: 320, behavior: 'smooth' });
+                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-md border hover:bg-gray-50 transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div id="related-scroll" ref={relatedRef} className="flex gap-6 overflow-x-auto no-scrollbar py-2">
+              {relatedProducts.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/products/${item.id}`)}
+                  className="min-w-[200px] sm:min-w-[220px] md:min-w-[260px] cursor-pointer border rounded-lg p-3 hover:shadow-lg transition bg-white flex-shrink-0"
+                >
+                  <div className="w-full h-44 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
+                    <img
+                      src={Array.isArray(item.image) ? item.image[0] : item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                  <h3 className="mt-3 text-sm font-medium text-gray-800 line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {item.price.toLocaleString()},000 VND
+                  </p>
                 </div>
-                <h3 className="mt-3 text-sm font-medium text-gray-800 line-clamp-2">
-                  {item.name}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {item.price.toLocaleString()},000 VND
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
