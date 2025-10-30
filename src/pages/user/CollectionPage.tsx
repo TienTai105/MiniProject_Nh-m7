@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import ProductList from "../components/ProductList";
-import type { Product } from "../types/product";
-import { getProducts } from "../api";
+import ProductList from "../../components/ProductList";
+import type { Product } from "../../types/product";
+import { getProducts } from "../../api";
 
 const CollectionPage: React.FC = () => {
   const [filter, setFilter] = useState<"all" | "bestseller" | "newproduct">("all");
