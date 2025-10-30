@@ -22,7 +22,6 @@ interface CartStore {
 export const useCartStore = create<CartStore>((set) => ({
   cart: [],
 
-  // ➕ Thêm sản phẩm vào giỏ
   addToCart: (item) =>
     set((state) => {
       const existing = state.cart.find(
@@ -40,16 +39,13 @@ export const useCartStore = create<CartStore>((set) => ({
       return { cart: [...state.cart, { ...item }] };
     }),
 
-  // ❌ Xóa sản phẩm khỏi giỏ
   removeFromCart: (id, size = null) =>
     set((state) => ({
       cart: state.cart.filter((item) => !(item.id === id && item.size === size)),
     })),
 
-  // 🗑️ Xóa toàn bộ giỏ
   clearCart: () => set({ cart: [] }),
 
-  // 🔼 Tăng số lượng
   increaseQuantity: (id, size = null) =>
     set((state) => ({
       cart: state.cart.map((item) =>
@@ -59,13 +55,11 @@ export const useCartStore = create<CartStore>((set) => ({
       ),
     })),
 
-  // 🔽 Giảm số lượng (nếu =0 thì chỉ đánh dấu để UI xử lý xác nhận)
   decreaseQuantity: (id, size = null) =>
     set((state) => {
       const item = state.cart.find((i) => i.id === id && i.size === size);
       if (!item) return state;
 
-      // Nếu quantity <= 1 → UI sẽ tự xử lý xác nhận xóa
       if (item.quantity <= 1) {
         return {
           cart: state.cart.map((i) =>
@@ -83,7 +77,6 @@ export const useCartStore = create<CartStore>((set) => ({
       };
     }),
 
-  // 🔢 Nhập trực tiếp số lượng
   setQuantity: (id, size = null, quantity) =>
     set((state) => ({
       cart: state.cart.map((item) =>
