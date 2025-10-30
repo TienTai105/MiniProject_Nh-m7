@@ -15,6 +15,8 @@ type Order = {
   subtotal?: number;
   total?: number;
   status?: string;
+  statusHistory?: { status: string; at: string; note?: string }[];
+  updatedAt?: string;
   createdAt?: string;
 };
 
@@ -45,11 +47,17 @@ const ManageOrders: React.FC = () => {
   const updateStatus = (id: string, status: string) => {
     try {
       const raw = JSON.parse(localStorage.getItem("orders") || "[]");
-      const updated = raw.map((o: any) => (o.id === id ? { ...o, status } : o));
+      const now = new Date().toISOString();
+      const updated = raw.map((o: any) => {
+        if (o.id !== id) return o;
+        const history = Array.isArray(o.statusHistory) ? o.statusHistory.slice() : [];
+        history.push({ status, at: now, note: "Cập nhật bởi admin" });
+        return { ...o, status, statusHistory: history, updatedAt: now };
+      });
       localStorage.setItem("orders", JSON.stringify(updated));
       setOrders(updated.slice().reverse());
       toast.success("Cập nhật trạng thái thành công");
-      if (selected?.id === id) setSelected((s) => s ? { ...s, status } : s);
+      if (selected?.id === id) setSelected((s) => s ? { ...s, status, statusHistory: (s.statusHistory || []).concat([{ status, at: now, note: "Cập nhật bởi admin" }]) } : s);
     } catch (err) {
       console.error(err);
       toast.error("Lỗi khi cập nhật trạng thái");

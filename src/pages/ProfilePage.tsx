@@ -29,12 +29,8 @@ const formatAddress = (a: any) => {
 const ProfilePage: React.FC = () => {
   const storeUser = useAuthStore((s) => s.user);
   const setAuthState = (val: any) => {
-    // cập nhật Zustand store trực tiếp
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     useAuthStore.setState({ user: val });
   };
-
   const [loading, setLoading] = useState(true);
   const [localUser, setLocalUser] = useState<any | null>(null); // user record from localStorage.users
   const [phone, setPhone] = useState("");
@@ -45,7 +41,6 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     try {
-      // load users from localStorage and find matching user by id or email/username
       const usersRaw = localStorage.getItem("users") || "[]";
       const users = JSON.parse(usersRaw);
       if (!storeUser) {

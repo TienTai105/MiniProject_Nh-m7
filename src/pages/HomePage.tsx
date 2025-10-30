@@ -50,7 +50,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold px-4 mt-6">HomePage</h1>
       <div className={`min-h-screen py-6 flex flex-col justify-center sm:py-12 ${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-gray-800"}`}>
         <section className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] flex items-center justify-center overflow-hidden">
           {slides.map((src, idx) => (
