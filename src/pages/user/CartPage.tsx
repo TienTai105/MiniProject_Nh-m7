@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore } from "../../store/cartStore";
 import { toast } from "react-toastify";
 
 const CartPage: React.FC = () => {
@@ -36,16 +36,10 @@ const CartPage: React.FC = () => {
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
-    // open modal confirmation instead of window.confirm
-    setPendingClear(true);
-  };
-
-  const [pendingClear, setPendingClear] = useState(false);
-
-  const confirmClearCart = () => {
-    clearCart();
-    setPendingClear(false);
-    toast.success("Đã xóa toàn bộ sản phẩm, giỏ hàng trống!", { autoClose: 1500 });
+    if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng không?")) {
+      clearCart();
+      toast.success("Đã xóa toàn bộ sản phẩm, giỏ hàng trống!", { autoClose: 1500 });
+    }
   };
 
   React.useEffect(() => {
@@ -179,31 +173,6 @@ const CartPage: React.FC = () => {
           </Link>
         </div>
       </div>
-
-      {/* Modal confirm for clearing cart */}
-      {pendingClear && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setPendingClear(false)} />
-          <div className="relative bg-white rounded shadow-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-2">Xác nhận xóa tất cả</h3>
-            <p className="text-sm text-gray-700 mb-4">Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?</p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setPendingClear(false)}
-                className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={confirmClearCart}
-                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-              >
-                Xác nhận xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

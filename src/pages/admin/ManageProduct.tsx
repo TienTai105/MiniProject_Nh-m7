@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProducts, deleteProduct } from "../../api";
 import { Link } from "react-router-dom";
@@ -25,9 +25,15 @@ const ManageProduct: React.FC = () => {
   });
 
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Bạn có chắc muốn xóa "${name}" không?`)) {
-      deleteMutation.mutate(id);
-    }
+    setPendingDelete({ id, name });
+  };
+
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    deleteMutation.mutate(pendingDelete.id);
+    setPendingDelete(null);
   };
 
   if (isLoading) return <p className="text-center mt-6">Đang tải dữ liệu...</p>;
@@ -90,6 +96,20 @@ const ManageProduct: React.FC = () => {
               ))}
             </tbody>
           </table>
+              {/* Modal confirm for product delete */}
+              {pendingDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black opacity-40" onClick={() => setPendingDelete(null)} />
+                  <div className="relative bg-white rounded shadow-lg p-6 w-full max-w-md mx-4">
+                    <h3 className="text-lg font-semibold mb-2">Xác nhận xóa sản phẩm</h3>
+                    <p className="text-sm text-gray-700 mb-4">Bạn có chắc chắn muốn xóa <span className="font-medium">{pendingDelete.name}</span> ?</p>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setPendingDelete(null)} className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200">Hủy</button>
+                      <button onClick={confirmDelete} className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600">Xác nhận xóa</button>
+                    </div>
+                  </div>
+                </div>
+              )}
         </div>
       )}
     </div>

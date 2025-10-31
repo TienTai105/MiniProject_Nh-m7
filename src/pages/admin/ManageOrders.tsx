@@ -23,6 +23,7 @@ type Order = {
 const ManageOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Order | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -64,8 +65,7 @@ const ManageOrders: React.FC = () => {
     }
   };
 
-  const removeOrder = (id: string) => {
-    if (!confirm("Xóa đơn hàng này?")) return;
+  const removeOrderConfirmed = (id: string) => {
     try {
       const raw = JSON.parse(localStorage.getItem("orders") || "[]");
       const updated = raw.filter((o: any) => o.id !== id);
@@ -76,6 +76,8 @@ const ManageOrders: React.FC = () => {
     } catch (err) {
       console.error(err);
       toast.error("Xóa không thành công");
+    } finally {
+      setPendingDelete(null);
     }
   };
 
@@ -188,12 +190,37 @@ const ManageOrders: React.FC = () => {
             </div>
 
             <div className="mt-4 flex gap-2">
-              <button onClick={() => { removeOrder(selected.id); }} className="px-3 py-2 border rounded text-red-600">Xóa</button>
+              <button onClick={() => setPendingDelete(selected.id)} className="px-3 py-2 border rounded text-red-600">Xóa</button>
               <button onClick={() => setSelected(null)} className="px-3 py-2 border rounded">Đóng</button>
             </div>
           </>
         )}
       </div>
+
+      {/* Modal confirm for deleting order */}
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setPendingDelete(null)} />
+          <div className="relative bg-white rounded shadow-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-2">Xác nhận xóa đơn hàng</h3>
+            <p className="text-sm text-gray-700 mb-4">Bạn có chắc chắn muốn xóa đơn <span className="font-medium">{pendingDelete}</span> ?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => removeOrderConfirmed(pendingDelete)}
+                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

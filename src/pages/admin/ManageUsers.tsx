@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type UserRec = {
   id: string;
@@ -11,6 +12,7 @@ type UserRec = {
 
 const ManageUsers: React.FC = () => {
   const [users, setUsers] = useState<UserRec[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -39,15 +41,31 @@ const ManageUsers: React.FC = () => {
     save(next);
   };
 
-  const removeUser = (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa người dùng này?")) return;
+  const removeUserConfirmed = (id: string) => {
     const next = users.filter((u) => u.id !== id);
     save(next);
+    setPendingDelete(null);
+    toast.success("Đã xóa người dùng");
   };
+
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
+    {/* Modal confirm for delete user */}
+    {pendingDelete && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black opacity-40" onClick={() => setPendingDelete(null)} />
+        <div className="relative bg-white rounded shadow-lg p-6 w-full max-w-md mx-4">
+          <h3 className="text-lg font-semibold mb-2">Xác nhận xóa người dùng</h3>
+          <p className="text-sm text-gray-700 mb-4">Bạn có chắc chắn muốn xóa người dùng <span className="font-medium">{pendingDelete}</span> ?</p>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setPendingDelete(null)} className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200">Hủy</button>
+            <button onClick={() => removeUserConfirmed(pendingDelete)} className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600">Xác nhận xóa</button>
+          </div>
+        </div>
+      </div>
+    )}
         <h2 className="text-lg font-semibold">Quản lý người dùng</h2>
         <button onClick={load} className="px-3 py-2 border rounded cursor-pointer">Tải lại</button>
       </div>
@@ -68,7 +86,7 @@ const ManageUsers: React.FC = () => {
                   {u.role || "user"}
                 </div>
                 <button onClick={() => toggleRole(u.id)} className="px-3 py-2 border rounded text-gray-500 cursor-pointer">Đổi role</button>
-                <button onClick={() => removeUser(u.id)} className="px-3 py-2 border rounded text-red-600 cursor-pointer">Xóa</button>
+                <button onClick={() => setPendingDelete(u.id)} className="px-3 py-2 border rounded text-red-600 cursor-pointer">Xóa</button>
               </div>
             </div>
           ))
