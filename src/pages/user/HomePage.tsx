@@ -1,11 +1,11 @@
 import React from "react";
-import ProductList from "../components/ProductList";
-import type { Product } from "../types/product";
-import { useThemeStore } from "../store/themeStore";
+import ProductList from "../../components/ProductList";
+import type { Product } from "../../types/product";
+import { useThemeStore } from "../../store/themeStore";
 
 import { useEffect, useState } from "react";
-import bannerImg from "../assets/Banner.jpg";
-import heroImg from "../assets/hero_img.png";
+import bannerImg from "../../assets/Banner.jpg";
+import heroImg from "../../assets/hero_img.png";
 
 const HomePage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);

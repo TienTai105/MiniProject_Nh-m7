@@ -1,17 +1,17 @@
 
 import { Routes, Route } from "react-router-dom";
 
-import Home from "../pages/HomePage";
-import Collection from "../pages/CollectionPage";
-import About from "../pages/AboutPage";
-import Contact from "../pages/ContactPage";
-import ProductDetail from "../pages/ProductDetail";
-import Login from "../pages/LoginPage";
-import Register from "../pages/RegisterPage";
-import CartPage from "../pages/CartPage";
-import CheckoutPage from "../pages/CheckoutPage";
-import ProfilePage from "../pages/ProfilePage"
-import ProfileOrdersPage from "../pages/ProfileOrdersPage"
+import Home from "../pages/user/HomePage";
+import Collection from "../pages/user/CollectionPage";
+import About from "../pages/user/AboutPage";
+import Contact from "../pages/user/ContactPage";
+import ProductDetail from "../pages/user/ProductDetail";
+import Login from "../pages/user/LoginPage";
+import Register from "../pages/user/RegisterPage";
+import CartPage from "../pages/user/CartPage";
+import CheckoutPage from "../pages/user/CheckoutPage";
+import ProfilePage from "../pages/user/ProfilePage"
+import ProfileOrdersPage from "../pages/user/ProfileOrdersPage"
 
 const UserRoutes: React.FC = () => {
     return (

@@ -1,5 +1,5 @@
 import React from "react";
-import banner from "../assets/Banner.jpg";
+import banner from "../../assets/Banner.jpg";
 
 const AboutPage: React.FC = () => {
   return (

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect} from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 
@@ -31,7 +31,7 @@ const AdminLayout: React.FC = () => {
               MyShop
             </Link>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600">Xin chào, {authUser?.name || authUser?.email || "Admin"}</div>
             <div className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">

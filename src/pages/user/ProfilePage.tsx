@@ -1,6 +1,6 @@
 // src/pages/ProfilePage.tsx
 import React, { useEffect, useState } from "react";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../../store/authStore";
 import { toast } from "react-toastify";
 
 const makeId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

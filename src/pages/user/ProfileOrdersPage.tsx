@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../../store/authStore";
 import { toast } from "react-toastify";
 
 const ProfileOrdersPage: React.FC = () => {
