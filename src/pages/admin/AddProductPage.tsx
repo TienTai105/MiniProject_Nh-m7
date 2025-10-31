@@ -43,6 +43,7 @@ const AddProductPage: React.FC = () => {
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [sizesArray, setSizesArray] = useState<string[]>([]);
 
   const {
     register,
@@ -86,7 +87,6 @@ const AddProductPage: React.FC = () => {
       description: existingProduct.description ?? "",
       category: existingProduct.category ?? "",
       subCategory: existingProduct.subCategory ?? "",
-      sizes: existingProduct.sizes ? existingProduct.sizes.join(", ") : "",
       date: existingProduct.date ?? Date.now(),
       bestseller: !!existingProduct.bestseller,
       newproduct: !!existingProduct.newproduct,
@@ -97,6 +97,10 @@ const AddProductPage: React.FC = () => {
         ? existingProduct.image
         : [existingProduct.image as string];
       setPreviewImages(imgs);
+    }
+
+    if (existingProduct.sizes) {
+      setSizesArray(existingProduct.sizes);
     }
   }, [existingProduct, reset]);
 
@@ -111,7 +115,7 @@ const AddProductPage: React.FC = () => {
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "my_preset"); // preset bạn đã tạo
+      formData.append("upload_preset", "my_preset");
       formData.append("cloud_name", "dgup7jtjx");
 
       try {
@@ -138,6 +142,23 @@ const AddProductPage: React.FC = () => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // --- Xử lý thêm/xóa size tag ---
+  const handleSizeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value.trim();
+    if ((e.key === "Enter" || e.key === ",") && value) {
+      e.preventDefault();
+      const newSize = value.toUpperCase();
+      if (!sizesArray.includes(newSize)) {
+        setSizesArray((prev) => [...prev, newSize]);
+      }
+      e.currentTarget.value = "";
+    }
+  };
+
+  const removeSize = (index: number) => {
+    setSizesArray((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Mutation thêm / cập nhật
   const addMutation = useMutation({
     mutationFn: async (payload: any) => addProduct(payload),
@@ -157,7 +178,7 @@ const AddProductPage: React.FC = () => {
       image: previewImages,
       category: data.category,
       subCategory: data.subCategory ?? "",
-      sizes: data.sizes ? data.sizes.split(",").map((s) => s.trim()) : [],
+      sizes: sizesArray,
       date: typeof data.date === "number" ? data.date : Date.now(),
       bestseller: !!data.bestseller,
       newproduct: !!data.newproduct,
@@ -185,126 +206,163 @@ const AddProductPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        {id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
-      </h2>
+  <div className="max-w-2xl mx-auto p-8 bg-white rounded-2xl shadow-lg">
+    <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
+      {id ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
+    </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Tên sản phẩm */}
-        <div>
-          <label className="block mb-1 font-medium">Tên sản phẩm</label>
-          <input {...register("name")} className="w-full border p-2 rounded" />
-          {errors.name && (
-            <p className="text-sm text-red-600">{errors.name.message}</p>
-          )}
-        </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Tên sản phẩm */}
+      <div>
+        <label className="block mb-1 font-semibold text-gray-700">Tên sản phẩm</label>
+        <input
+          {...register("name")}
+          className="w-full p-3 rounded-xl bg-gray-50 focus:bg-white focus:shadow-md outline-none transition-all duration-200"
+        />
+        {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
+      </div>
 
-        {/* Giá */}
-        <div>
-          <label className="block mb-1 font-medium">Giá</label>
-          <input
-            type="number"
-            {...register("price")}
-            className="w-full border p-2 rounded"
-            step="any"
+      {/* Giá */}
+      <div>
+        <label className="block mb-1 font-semibold text-gray-700">Giá</label>
+        <input
+          type="number"
+          {...register("price")}
+          step="any"
+          className="w-full p-3 rounded-xl bg-gray-50 focus:bg-white focus:shadow-md outline-none transition-all duration-200"
+        />
+        {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
+      </div>
+
+   {/* Ảnh sản phẩm */}
+<div>
+  <label className="block mb-1 font-semibold text-gray-700">Ảnh sản phẩm</label>
+
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    onChange={handleFileUpload}
+    className="file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:text-sm file:font-medium
+               file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all duration-200
+               cursor-pointer w-full border border-gray-200 rounded-lg p-2 bg-white shadow-sm focus:ring-2 focus:ring-blue-300"
+  />
+
+  {uploading && <p className="text-blue-600 mt-1">Đang tải ảnh lên...</p>}
+
+  {previewImages.length > 0 && (
+    <div className="mt-3 flex flex-wrap gap-3">
+      {previewImages.map((src, index) => (
+        <div key={index} className="relative w-28 h-28">
+          <img
+            src={src}
+            alt={`preview-${index}`}
+            className="w-full h-full object-cover rounded-xl shadow-md"
           />
-          {errors.price && (
-            <p className="text-sm text-red-600">{errors.price.message}</p>
-          )}
-        </div>
-
-        {/* Ảnh sản phẩm */}
-        <div>
-          <label className="block mb-1 font-medium">Ảnh sản phẩm</label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileUpload}
-            className="w-full border p-2 rounded"
-          />
-          {uploading && <p className="text-blue-600 mt-1">Đang tải ảnh lên...</p>}
-
-          {previewImages.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-3">
-              {previewImages.map((src, index) => (
-                <div key={index} className="relative w-28 h-28">
-                  <img
-                    src={src}
-                    alt={`preview-${index}`}
-                    className="w-full h-full object-cover rounded-lg border shadow-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 bg-black bg-opacity-70 text-white rounded-full p-1 text-xs hover:bg-opacity-90 transition-opacity z-10"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Danh mục */}
-        <div>
-          <label className="block mb-1 font-medium">Danh mục</label>
-          <input {...register("category")} className="w-full border p-2 rounded" />
-          {errors.category && (
-            <p className="text-sm text-red-600">{errors.category.message}</p>
-          )}
-        </div>
-
-        {/* Mô tả */}
-        <div>
-          <label className="block mb-1 font-medium">Mô tả</label>
-          <textarea {...register("description")} className="w-full border p-2 rounded" />
-        </div>
-
-        {/* Danh mục phụ & Size */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-medium">Danh mục phụ</label>
-            <input {...register("subCategory")} className="w-full border p-2 rounded" />
-          </div>
-          <div>
-            <label className="block mb-1 font-medium">Kích cỡ (S,M,L,XL)</label>
-            <input {...register("sizes")} placeholder="S,M,L" className="w-full border p-2 rounded" />
-          </div>
-        </div>
-
-        {/* Bestseller + New product */}
-        <div className="flex items-center gap-4">
-          <label className="inline-flex items-center">
-            <input type="checkbox" {...register("bestseller")} className="mr-2" /> Bestseller
-          </label>
-          <label className="inline-flex items-center">
-            <input type="checkbox" {...register("newproduct")} className="mr-2" /> New Product
-          </label>
-        </div>
-
-        {/* Nút hành động */}
-        <div className="flex justify-end gap-2">
           <button
             type="button"
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 border rounded"
+            onClick={() => removeImage(index)}
+            className="absolute top-1 right-1 bg-black bg-opacity-70 text-white rounded-full p-1 text-xs hover:bg-opacity-90 transition"
           >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || uploading}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-          >
-            {uploading ? "Đang tải ảnh..." : id ? "Cập nhật" : "Thêm"}
+            ✕
           </button>
         </div>
-      </form>
+      ))}
     </div>
-  );
+  )}
+</div>
+
+      {/* Danh mục */}
+      <div>
+        <label className="block mb-1 font-semibold text-gray-700">Danh mục</label>
+        <input
+          {...register("category")}
+          className="w-full p-3 rounded-xl bg-gray-50 focus:bg-white focus:shadow-md outline-none transition-all duration-200"
+        />
+      </div>
+
+      {/* Mô tả */}
+      <div>
+        <label className="block mb-1 font-semibold text-gray-700">Mô tả</label>
+        <textarea
+          {...register("description")}
+          rows={3}
+          className="w-full p-3 rounded-xl bg-gray-50 focus:bg-white focus:shadow-md outline-none transition-all duration-200"
+        />
+      </div>
+
+      {/* Danh mục phụ */}
+      <div>
+        <label className="block mb-1 font-semibold text-gray-700">Danh mục phụ</label>
+        <input
+          {...register("subCategory")}
+          className="w-full p-3 rounded-xl bg-gray-50 focus:bg-white focus:shadow-md outline-none transition-all duration-200"
+        />
+      </div>
+
+      {/* Sizes Tag Input */}
+      <div>
+        <label className="block mb-2 font-semibold text-gray-700">Kích cỡ (Enter để thêm)</label>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl p-3 bg-gray-50 focus-within:bg-white focus-within:shadow-md transition-all duration-200">
+          {sizesArray.map((size, index) => (
+            <span
+              key={index}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800 text-white font-medium text-sm shadow-sm"
+            >
+              {size}
+              <button
+                type="button"
+                onClick={() => removeSize(index)}
+                className="ml-1 text-xs hover:text-gray-300 transition"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+
+          <input
+            type="text"
+            placeholder="Nhập size..."
+            onKeyDown={handleSizeKeyDown}
+            className="flex-1 min-w-[100px] p-1 bg-transparent outline-none text-sm text-gray-700"
+          />
+        </div>
+      </div>
+
+      {/* Checkbox */}
+      <div className="flex items-center gap-4">
+        <label className="inline-flex items-center text-gray-700">
+          <input type="checkbox" {...register("bestseller")} className="mr-2 accent-gray-800" />
+          Bestseller
+        </label>
+        <label className="inline-flex items-center text-gray-700">
+          <input type="checkbox" {...register("newproduct")} className="mr-2 accent-gray-800" />
+          New Product
+        </label>
+      </div>
+
+      {/* Nút hành động */}
+      <div className="flex justify-end gap-3 pt-3">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || uploading}
+          className="px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 shadow-md transition"
+        >
+          {uploading ? "Đang tải ảnh..." : id ? "Cập nhật" : "Thêm"}
+        </button>
+      </div>
+    </form>
+  </div>
+);
+
+
 };
 
 export default AddProductPage;

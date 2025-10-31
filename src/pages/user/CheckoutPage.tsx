@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useCartStore } from "../store/cartStore";
-import { useAuthStore } from "../store/authStore";
+import { useCartStore } from "../../store/cartStore";
+import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 

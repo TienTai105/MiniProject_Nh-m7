@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import ConfirmModal from "../../components/ConfirmModal";
 
 type Order = {
   id: string;
@@ -23,6 +24,7 @@ type Order = {
 const ManageOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Order | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -64,8 +66,7 @@ const ManageOrders: React.FC = () => {
     }
   };
 
-  const removeOrder = (id: string) => {
-    if (!confirm("Xóa đơn hàng này?")) return;
+  const removeOrderConfirmed = (id: string) => {
     try {
       const raw = JSON.parse(localStorage.getItem("orders") || "[]");
       const updated = raw.filter((o: any) => o.id !== id);
@@ -76,6 +77,8 @@ const ManageOrders: React.FC = () => {
     } catch (err) {
       console.error(err);
       toast.error("Xóa không thành công");
+    } finally {
+      setPendingDelete(null);
     }
   };
 
@@ -188,12 +191,22 @@ const ManageOrders: React.FC = () => {
             </div>
 
             <div className="mt-4 flex gap-2">
-              <button onClick={() => { removeOrder(selected.id); }} className="px-3 py-2 border rounded text-red-600">Xóa</button>
+              <button onClick={() => setPendingDelete(selected.id)} className="px-3 py-2 border rounded text-red-600">Xóa</button>
               <button onClick={() => setSelected(null)} className="px-3 py-2 border rounded">Đóng</button>
             </div>
           </>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        title="Xác nhận xóa đơn hàng"
+        message={<span>Bạn có chắc chắn muốn xóa đơn <strong>{pendingDelete}</strong> ?</span>}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => removeOrderConfirmed(pendingDelete!)}
+        cancelLabel="Hủy"
+        confirmLabel="Xác nhận xóa"
+      />
     </div>
   );
 };

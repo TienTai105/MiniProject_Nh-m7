@@ -1,39 +1,44 @@
 import React from "react";
 
-interface ConfirmModalProps {
-  show: boolean;
+type ConfirmModalProps = {
+  open: boolean;
   title?: string;
-  message: string;
+  message?: React.ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
-}
+  confirmLabel?: string;
+  cancelLabel?: string;
+};
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
-  show,
+  open,
   title = "Xác nhận",
   message,
   onConfirm,
   onCancel,
+  confirmLabel = "Xác nhận",
+  cancelLabel = "Hủy",
 }) => {
-  if (!show) return null;
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
-        <h3 className="text-lg font-semibold mb-3">{title}</h3>
-        <p className="text-gray-600 mb-5">{message}</p>
-        <div className="flex justify-center gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black opacity-40" onClick={onCancel} />
+      <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <div className="text-sm text-gray-700 mb-4">{message}</div>
+        <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 transition"
+            className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200"
           >
-            Hủy
+            {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+            className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
           >
-            Xác nhận
+            {confirmLabel}
           </button>
         </div>
       </div>

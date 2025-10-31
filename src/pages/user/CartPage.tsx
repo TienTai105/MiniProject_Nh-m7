@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore } from "../../store/cartStore";
 import { toast } from "react-toastify";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, clearCart, increaseQuantity, decreaseQuantity, setQuantity } = useCartStore();
@@ -11,10 +12,8 @@ const CartPage: React.FC = () => {
   const grandTotal = total + shippingFee;
 
   const handleRemove = (id: number, size: string | null, name?: string) => {
-    if (window.confirm(`Bạn có chắc muốn xóa "${name ?? 'sản phẩm'}" khỏi giỏ hàng?`)) {
       removeFromCart(id, size);
       toast.info(`Đã xóa ${name ?? 'sản phẩm'} khỏi giỏ hàng`, { autoClose: 1500 });
-    }
   };
 
   const handleIncrease = (id: number, size: string | null) => {
@@ -36,10 +35,15 @@ const CartPage: React.FC = () => {
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
-    if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng không?")) {
-      clearCart();
-      toast.success("Đã xóa toàn bộ sản phẩm, giỏ hàng trống!", { autoClose: 1500 });
-    }
+    setPendingClear(true);
+  };
+
+  const [pendingClear, setPendingClear] = useState(false);
+
+  const confirmClearCart = () => {
+    clearCart();
+    setPendingClear(false);
+    toast.success("Đã xóa toàn bộ sản phẩm, giỏ hàng trống!", { autoClose: 1500 });
   };
 
   React.useEffect(() => {
@@ -173,6 +177,16 @@ const CartPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+        <ConfirmModal
+          open={pendingClear}
+          title="Xác nhận xóa tất cả"
+          message="Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?"
+          onCancel={() => setPendingClear(false)}
+          onConfirm={confirmClearCart}
+          cancelLabel="Hủy"
+          confirmLabel="Xác nhận xóa"
+        />
     </div>
   );
 };

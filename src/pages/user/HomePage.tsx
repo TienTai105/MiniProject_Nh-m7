@@ -1,11 +1,11 @@
 import React from "react";
-import ProductList from "../components/ProductList";
-import type { Product } from "../types/product";
-import { useThemeStore } from "../store/themeStore";
+import ProductList from "../../components/ProductList";
+import type { Product } from "../../types/product";
+import { useThemeStore } from "../../store/themeStore";
 
 import { useEffect, useState } from "react";
-import bannerImg from "../assets/Banner.jpg";
-import heroImg from "../assets/hero_img.png";
+import bannerImg from "../../assets/Banner.jpg";
+import heroImg from "../../assets/hero_img.png";
 
 const HomePage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -50,7 +50,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold px-4 mt-6">HomePage</h1>
       <div className={`min-h-screen py-6 flex flex-col justify-center sm:py-12 ${theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-gray-800"}`}>
         <section className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] flex items-center justify-center overflow-hidden">
           {slides.map((src, idx) => (

@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import type { Product } from "../types/product";
-import { useCartStore } from "../store/cartStore";
+import type { Product } from "../../types/product";
+import { useCartStore } from "../../store/cartStore";
 import { toast } from "react-toastify";
-// Swiper for related products slider
-// related products slider implemented with simple horizontal scroll (no external slider lib)
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -115,6 +113,10 @@ const ProductDetail: React.FC = () => {
     const idNum = Number(product.id) || Date.now();
     const img = Array.isArray(product.image) ? product.image[0] ?? "" : product.image ?? "";
     const quantity = typeof qty === "number" ? qty : Number(qty) || 1;
+    if (quantity < 1) {
+    toast.error("Số lượng không hợp lệ");
+    return;
+  }
 
     addToCartStore({
       id: idNum,
@@ -203,11 +205,10 @@ const ProductDetail: React.FC = () => {
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}
-                  className={`px-3 py-1 border rounded-md text-sm ${
-                    selectedSize === s
+                  className={`px-3 py-1 border rounded-md text-sm ${selectedSize === s
                       ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white text-gray-700"
-                  }`}
+                    }`}
                 >
                   {s}
                 </button>
@@ -247,18 +248,26 @@ const ProductDetail: React.FC = () => {
                 }}
                 onBlur={(e) => {
                   const v = String(e.currentTarget.value).trim();
+
+                  // Nếu rỗng, khôi phục giá trị trước đó
                   if (v === "") {
-                    // restore previous if user cleared and left
                     setQty(prevQtyRef.current);
                     return;
                   }
+
                   const n = Number(v);
+
+                  // Nếu không phải số, hoặc nhỏ hơn 1 → đặt lại = 1
                   if (isNaN(n) || n < 1) {
-                    setQty(prevQtyRef.current);
+                    toast.warning("Số lượng tối thiểu là 1");
+                    setQty(1);
                     return;
                   }
-                  setQty(Math.max(1, n));
+
+                  // Nếu hợp lệ thì làm tròn và đặt lại
+                  setQty(Math.floor(n));
                 }}
+
                 onKeyDown={(e) => {
                   if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                 }}

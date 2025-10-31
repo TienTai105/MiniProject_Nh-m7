@@ -1,5 +1,7 @@
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import ConfirmModal from "../../components/ConfirmModal";
 
 type UserRec = {
   id: string;
@@ -11,6 +13,7 @@ type UserRec = {
 
 const ManageUsers: React.FC = () => {
   const [users, setUsers] = useState<UserRec[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -39,15 +42,26 @@ const ManageUsers: React.FC = () => {
     save(next);
   };
 
-  const removeUser = (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa người dùng này?")) return;
+  const removeUserConfirmed = (id: string) => {
     const next = users.filter((u) => u.id !== id);
     save(next);
+    setPendingDelete(null);
+    toast.success("Đã xóa người dùng");
   };
+
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
+    <ConfirmModal
+      open={!!pendingDelete}
+      title="Xác nhận xóa người dùng"
+      message={pendingDelete ? <span>Bạn có chắc chắn muốn xóa người dùng <strong>{pendingDelete}</strong> ?</span> : ""}
+      onCancel={() => setPendingDelete(null)}
+      onConfirm={() => removeUserConfirmed(pendingDelete!)}
+      cancelLabel="Hủy"
+      confirmLabel="Xác nhận xóa"
+    />
         <h2 className="text-lg font-semibold">Quản lý người dùng</h2>
         <button onClick={load} className="px-3 py-2 border rounded cursor-pointer">Tải lại</button>
       </div>
@@ -68,7 +82,7 @@ const ManageUsers: React.FC = () => {
                   {u.role || "user"}
                 </div>
                 <button onClick={() => toggleRole(u.id)} className="px-3 py-2 border rounded text-gray-500 cursor-pointer">Đổi role</button>
-                <button onClick={() => removeUser(u.id)} className="px-3 py-2 border rounded text-red-600 cursor-pointer">Xóa</button>
+                <button onClick={() => setPendingDelete(u.id)} className="px-3 py-2 border rounded text-red-600 cursor-pointer">Xóa</button>
               </div>
             </div>
           ))
