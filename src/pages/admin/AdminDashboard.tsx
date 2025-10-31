@@ -20,7 +20,6 @@ const AdminDashboard: React.FC = () => {
       const products = JSON.parse(localStorage.getItem("products") || "[]");
       const orders = JSON.parse(localStorage.getItem("orders") || "[]");
 
-  // Only count revenue for orders that have reached the 'Delivered' status
   const deliveredOrders = (Array.isArray(orders) ? orders : []).filter((o: any) => String(o.status).toLowerCase() === "delivered");
   const revenue = deliveredOrders.reduce((s: number, o: any) => s + (Number(o.total) || Number(o.subtotal) || 0), 0);
 
@@ -32,9 +31,7 @@ const AdminDashboard: React.FC = () => {
       });
 
       const monthData: Record<string, number> = {};
-      // Aggregate revenue only for delivered orders (use the deliveredOrders computed above)
-      // Use the timestamp when the order became 'Delivered' if available (statusHistory),
-      // otherwise fall back to updatedAt or createdAt.
+
       deliveredOrders.forEach((order: any) => {
         const history = Array.isArray(order.statusHistory) ? order.statusHistory : [];
         const deliveredEntry = history.slice().reverse().find((h: any) => String(h.status).toLowerCase() === "delivered");

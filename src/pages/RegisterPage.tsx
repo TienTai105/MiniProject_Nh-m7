@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Link } from "react-router-dom";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 import { Eye, EyeOff } from "lucide-react";
 
 type RegisterFormInputs = {
@@ -52,6 +52,7 @@ const seedAdminIfMissing = () => {
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const loginStore = useAuthStore((s) => s.login);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -92,22 +93,17 @@ const RegisterPage: React.FC = () => {
       createdAt: new Date().toISOString(),
     };
 
-    try {
-      users.push(newUser);
-      localStorage.setItem("users", JSON.stringify(users));
+    users.push(newUser);
+    localStorage.setItem("users", JSON.stringify(users));
 
-      // Trigger storage event để đồng bộ giữa các tab
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'users',
-        newValue: JSON.stringify(users)
-      }));
-
-      alert("Đăng ký thành công! Vui lòng đăng nhập.");
-      navigate("/login");
-    } catch (error) {
-      console.error("Error saving user:", error);
-      alert("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
+    // auto login
+    const success = loginStore(email, password);
+    if (!success) {
+      alert("Đăng ký thành công nhưng đăng nhập thất bại");
+      return;
     }
+
+    navigate("/login");
   };
 
   return (
@@ -171,12 +167,12 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md">Đăng ký</button>
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md">Đăng ký</button>
             </div>
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            Đã có tài khoản? <Link to="/login" className="text-blue-600 hover:underline">Đăng Nhập</Link>
+            Đã có tài khoản? <a href="/login" className="text-blue-600 hover:underline">Đăng Nhập</a>
           </div>
         </div>
       </div>

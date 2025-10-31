@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
+import { toast } from "react-toastify";
 
 const ProfileOrdersPage: React.FC = () => {
   const { user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const loadOrdersForUser = () => {
     try {
@@ -25,23 +27,27 @@ const ProfileOrdersPage: React.FC = () => {
     }
   };
 
-  const deleteOrder = (orderId: string, orderStatus: string) => {
-    // Kiểm tra trạng thái đơn hàng
-    if (orderStatus === "Shipped" || orderStatus === "Delivered") {
-      alert("Không thể xóa đơn hàng đã được giao hoặc đang vận chuyển!");
-      return;
-    }
-    
-    if (!confirm("Bạn có chắc chắn muốn xóa đơn hàng này?")) return;
-    
+  const deleteOrder = (orderId: string) => {
     try {
       const raw = localStorage.getItem("orders") || "[]";
       const arr = JSON.parse(raw);
+
+      const target = arr.find((o: any) => o.id === orderId);
+      if (target && (target.status === "Shipped" || target.status === "Delivered")) {
+        alert("Không thể xóa đơn hàng đã được giao hoặc đang vận chuyển!");
+        setPendingDelete(null);
+        return;
+      }
+
       const filtered = arr.filter((o: any) => o.id !== orderId);
       localStorage.setItem("orders", JSON.stringify(filtered));
       loadOrdersForUser();
+      setPendingDelete(null);
+      toast.success("Đã xóa đơn hàng");
     } catch (err) {
       console.error("Delete order error", err);
+      setPendingDelete(null);
+      toast.error("Xóa đơn hàng thất bại");
     }
   };
 
@@ -53,6 +59,9 @@ const ProfileOrdersPage: React.FC = () => {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, [user]);
+
+  // the currently selected order for modal confirmation
+  const targetOrder = pendingDelete ? orders.find((x) => x.id === pendingDelete) : null;
 
   if (!user) return <div className="p-6">Vui lòng đăng nhập</div>;
 
@@ -70,23 +79,19 @@ const ProfileOrdersPage: React.FC = () => {
                 <div className="font-semibold">Đơn: {o.id}</div>
                 <div className="text-xs text-gray-400">{new Date(o.createdAt).toLocaleString()}</div>
                 {Array.isArray(o.statusHistory) && o.statusHistory.length > 0 && (
-                  <div className="text-xs text-gray-400">Cập nhật: {new Date(o.statusHistory[o.statusHistory.length - 1].at).toLocaleString()}</div>
+                  <div className="text-xs text-gray-400">{new Date(o.statusHistory[o.statusHistory.length - 1].at).toLocaleString()}</div>
                 )}
               </div>
               <div className="mt-2 sm:mt-0 text-right">
                 <div className="text-sm">Tổng: <span className="font-semibold">{(o.total || o.subtotal || 0).toLocaleString('vi-VN')}.000 VND</span></div>
                 <div className="text-sm">Trạng thái: <span className="font-medium">{o.status}</span></div>
-                {(o.status !== "Shipped" && o.status !== "Delivered") ? (
+                {o.status !== "Shipped" && o.status !== "Delivered" && (
                   <button
-                    onClick={() => deleteOrder(o.id, o.status)}
+                    onClick={() => setPendingDelete(o.id)}
                     className="mt-2 px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
                   >
                     Xóa đơn hàng
                   </button>
-                ) : (
-                  <div className="mt-2 px-3 py-1 bg-gray-300 text-gray-600 text-xs rounded cursor-not-allowed">
-                    Không thể xóa
-                  </div>
                 )}
               </div>
             </div>
@@ -111,6 +116,31 @@ const ProfileOrdersPage: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Modal confirm for delete */}
+      {pendingDelete && targetOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black opacity-40" onClick={() => setPendingDelete(null)} />
+          <div className="relative bg-white rounded shadow-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-2">Xác nhận xóa đơn hàng</h3>
+            <p className="text-sm text-gray-700 mb-4">Bạn chắc chắn muốn xóa đơn <span className="font-medium">{targetOrder.id}</span> ?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="px-3 py-2 bg-gray-100 rounded text-sm hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => deleteOrder(pendingDelete)}
+                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+              >
+                Xác nhận xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

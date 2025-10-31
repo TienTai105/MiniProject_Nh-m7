@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Link } from "react-router-dom";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 type LoginFormInputs = {
   username: string; 
@@ -51,35 +51,9 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const loginStore = useAuthStore((s) => s.login);
   const [showPassword, setShowPassword] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
-
-  // Lắng nghe sự thay đổi của localStorage từ các tab khác
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'users') {
-        try {
-          const updatedUsers = e.newValue ? JSON.parse(e.newValue) : [];
-          setUsers(updatedUsers);
-        } catch (err) {
-          console.error('Error parsing users from storage event:', err);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   useEffect(() => {
     seedAdminIfMissing();
-    // Load users khi component mount
-    try {
-      const usersFromStorage = JSON.parse(localStorage.getItem('users') || '[]');
-      setUsers(usersFromStorage);
-    } catch (err) {
-      console.error('Error loading initial users:', err);
-      setUsers([]);
-    }
   }, []);
 
   const {
@@ -94,11 +68,15 @@ const LoginPage: React.FC = () => {
     const username = String(data.username).trim().toLowerCase();
     const password = String(data.password);
 
-    // Sử dụng state users thay vì đọc trực tiếp từ localStorage
-    let currentUsers = users;
+    let users: any[] = [];
+    try {
+      users = JSON.parse(localStorage.getItem("users") || "[]");
+    } catch {
+      users = [];
+    }
 
     if (username === ADMIN_EMAIL && password === ADMIN_PW) {
-      let admin = currentUsers.find((u) => u.email === ADMIN_EMAIL && u.role === "admin");
+      let admin = users.find((u) => u.email === ADMIN_EMAIL && u.role === "admin");
       if (!admin) {
         admin = {
           id: makeId(),
@@ -108,9 +86,8 @@ const LoginPage: React.FC = () => {
           role: "admin",
           createdAt: new Date().toISOString(),
         };
-        currentUsers = [...currentUsers, admin];
-        localStorage.setItem("users", JSON.stringify(currentUsers));
-        setUsers(currentUsers); // Cập nhật state
+        users.push(admin);
+        localStorage.setItem("users", JSON.stringify(users));
       }
       const success = loginStore(ADMIN_EMAIL, ADMIN_PW);
       if (!success) {
@@ -127,7 +104,7 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    const found = currentUsers.find((u) => u.email === username && u.password === password);
+    const found = users.find((u) => u.email === username && u.password === password);
     if (!found) {
         toast.error("Email hoặc mật khẩu không đúng (hoặc chưa đăng ký).", {
         autoClose: 1500
@@ -146,8 +123,8 @@ const LoginPage: React.FC = () => {
       toast.success("Đăng nhập thành công!", {
         autoClose: 1500
       });
-  if (role === "admin") navigate("/admin");
-  else navigate("/");
+    if (role === "admin") navigate("/admin");
+    else navigate("/");
   };
 
   return (
